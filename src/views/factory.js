@@ -26,6 +26,13 @@ import { kv, setStatus, setTabs, setTitleFile } from '../ui.js';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const resTone = (r) => (r > 8 ? 'fail' : r > SPEC_NM ? 'warn' : 'ok');
 
+/**
+ * Leaving the view mid-run abandons the pipeline rather than letting it write
+ * into a detached DOM — and leaves the die unfixed, which is the honest
+ * outcome of walking away before the run finished.
+ */
+let runToken = 0;
+
 /** Rebuild the fit of an already-corrected die from the knob we recorded. */
 function fitFromKnob(die) {
   const siteId = Object.keys(die.knobs.local)[0];
@@ -56,6 +63,7 @@ export function renderFactory(app, dieId) {
   const crude = crudeFromResiduals(before);
   const worst = before.reduce((w, s) => (s.r > w.r ? s : w));
   const siteId = fit.siteId;
+  const token = ++runToken;
 
   setTabs('factory');
   setTitleFile(`${LOT.file} · ${die.id} · factory run`);
@@ -145,7 +153,7 @@ export function renderFactory(app, dieId) {
   document.getElementById('back-die').onclick = () => (location.hash = `#/die/${die.id}`);
   document.getElementById('back-lot').onclick = () => (location.hash = '#/lot');
 
-  runPipeline({ app, die, fit, crude, before, worst, siteId });
+  runPipeline({ app, die, fit, crude, before, worst, siteId, token });
 }
 
 /* ------------------------------------------------------------- pipeline */
@@ -167,11 +175,17 @@ const stepRow = (s) => `
     </div>
   </li>`;
 
-async function runPipeline({ app, die, fit, crude, before, worst, siteId }) {
+async function runPipeline({ app, die, fit, crude, before, worst, siteId, token }) {
   const t0 = performance.now();
   const logEl = document.getElementById('log');
   const stepEl = (id) => app.querySelector(`[data-step="${id}"]`);
   const detailEl = (id) => app.querySelector(`[data-step-detail="${id}"]`);
+
+  /** Resolves false once the presenter has navigated somewhere else. */
+  const wait = async (ms) => {
+    await sleep(ms);
+    return token === runToken;
+  };
 
   const log = (text, kind = '') => {
     const t = ((performance.now() - t0) / 1000).toFixed(1);
@@ -194,12 +208,12 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId }) {
     if (detail) detailEl(id).textContent = detail;
   };
 
-  await sleep(500);
+  if (!(await wait(500))) return;
 
   // 1 — read metrology
   enter('read');
   log(`Reading metrology for ${die.id}, 4 sites, 8 grabs each.`);
-  await sleep(1000);
+  if (!(await wait(1000))) return;
   const clean = before.filter((s) => s.r <= SPEC_NM).map((s) => s.id);
   log(`${siteId} is ${worst.r.toFixed(1)} nm out. ${clean.join(', ')} are all under ${SPEC_NM.toFixed(1)} nm.`, 'bad');
   done('read', `${siteId} ${worst.r.toFixed(1)} nm · ${clean.join(', ')} under spec.`);
@@ -207,7 +221,7 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId }) {
   // 2 — fit model
   enter('fit');
   log('Fitting r(x,y) = T + R·[x y]ᵀ.');
-  await sleep(1100);
+  if (!(await wait(1100))) return;
   log(
     `Global-T fit rejected: it would push ${crude.broken.join(', ')} out of spec to chase ${siteId}.`,
     'bad',
@@ -217,7 +231,7 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId }) {
 
   // 3 — propose knobs
   enter('knobs');
-  await sleep(900);
+  if (!(await wait(900))) return;
   log(
     `Knob ${siteId}: Δx ${nm(fit.knob.dx)} nm, Δy ${nm(fit.knob.dy)} nm, θ ${nm(fit.knob.theta, 2)}°.`,
   );
@@ -228,7 +242,7 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId }) {
   // 4 — re-sim, and the moment the mark comes home
   enter('re-sim');
   log('Re-simulating overlay with the corrected knob.');
-  await sleep(500);
+  if (!(await wait(500))) return;
 
   const result = die.fixed
     ? { before: worst.r, after: maxResidual(die) }
@@ -241,7 +255,7 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId }) {
   setMarkResidual(app, 'measured', siteId, { dx: site.dx, dy: site.dy }, SPEC_NM);
   countTo('live-res', result.before, result.after, 900, (v) => `${v.toFixed(1)} nm`);
   document.getElementById('live-sub').textContent = `max |r| @ site ${siteId}`;
-  await sleep(1000);
+  if (!(await wait(1000))) return;
   document.getElementById('live-res').classList.add('kpi__value--ok');
 
   const moved = die.sites.filter(
@@ -256,7 +270,7 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId }) {
 
   // 5 — verdict
   enter('verdict');
-  await sleep(700);
+  if (!(await wait(700))) return;
   const pass = maxResidual(die) <= SPEC_NM;
   log(
     pass

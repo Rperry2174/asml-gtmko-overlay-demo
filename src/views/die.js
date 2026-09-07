@@ -94,7 +94,7 @@ export function renderDie(app, dieId) {
           ? `CRUDE T-ONLY FIT · max |r| = ${maxNow.toFixed(1)} nm`
           : `MEASURED · max |r| = ${maxNow.toFixed(1)} nm @ ${worst.id}`,
         tone: resTone(maxNow),
-        selected: die.outlier,
+        selected: die.outlier ?? worst.id,
         specNm: SPEC_NM,
         panelId: 'measured',
         footnote: state.preview ? 'what a weak model does' : 'after exposure',

@@ -8,6 +8,7 @@ import {
   health,
   lotKpis,
   maxResidual,
+  residuals,
   worstSite,
 } from '../data.js';
 import { dieThumb } from '../layout-svg.js';
@@ -26,6 +27,25 @@ function cardNote(die) {
     return note || `Site ${worst.id} drifting at ${worst.r.toFixed(1)} nm. Watch it.`;
   }
   return 'All four sites inside spec.';
+}
+
+/**
+ * Four mini bars, one per site, on a square-root scale so a 22 nm miss and a
+ * 0.5 nm one are both readable on the same 26 px strip.
+ */
+function siteBars(die) {
+  return `<div class="sites">
+    ${residuals(die)
+      .map((s) => {
+        const h = Math.max(2, Math.min(1, Math.sqrt(s.r / 22)) * 26);
+        const tone = s.r > 8 ? 'fail' : s.r > SPEC_NM ? 'warn' : 'ok';
+        return `<div class="site" title="site ${s.id} · ${s.r.toFixed(1)} nm">
+            <div class="site__track"><div class="site__bar site__bar--${tone}" style="height:${h.toFixed(0)}px"></div></div>
+            <span class="site__id">${s.id}</span>
+          </div>`;
+      })
+      .join('')}
+  </div>`;
 }
 
 function dieCard(die) {
@@ -47,6 +67,10 @@ function dieCard(die) {
     <div class="die-card__body">
       ${dieThumb(status)}
       ${healthChips(health(die))}
+    </div>
+    <div class="die-card__sites">
+      ${siteBars(die)}
+      <span class="die-card__sites-label">per-site residual</span>
     </div>
     <div class="die-card__note ${status === 'fail' ? 'die-card__note--fail' : ''}">${cardNote(die)}</div>
   </button>`;

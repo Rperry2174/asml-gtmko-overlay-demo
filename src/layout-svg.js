@@ -192,7 +192,9 @@ function marks({ mode, residuals, selected, showResiduals, showCallout, specNm }
     out += `<text class="lv-mark-label ${bad ? 'is-bad' : ''}" data-mark-label="${site.id}"
               x="${cx}" y="${labelY}" text-anchor="middle">${text}</text>`;
 
-    if (showCallout && bad) {
+    // Only the site under discussion gets a callout. Printing one per bad
+    // site turns the crude-fit preview into overlapping text.
+    if (showCallout && bad && (!selected || isSel)) {
       const ox = cx + 3.4 * S;
       const oy = cy - 1.6 * S;
       out += `<g class="lv-callout" data-callout="${site.id}">

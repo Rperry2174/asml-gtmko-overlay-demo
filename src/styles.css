@@ -199,6 +199,7 @@ body {
   border-right: 1px solid var(--line);
   padding: 12px 12px 20px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .rail--right {
@@ -274,6 +275,8 @@ body {
 
 .kv__v {
   color: var(--text);
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 /* ----------------------------------------------------------- toolbar row */
@@ -332,7 +335,11 @@ button.tool:hover {
 }
 
 .panels--single {
-  grid-template-columns: minmax(0, 620px);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.panels--single .panel {
+  max-width: 680px;
 }
 
 .panel {
@@ -602,8 +609,14 @@ button.tool:hover {
 
 .dies {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+  gap: 11px;
+}
+
+@media (min-width: 1380px) {
+  .dies {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .die-card {
@@ -652,14 +665,14 @@ button.tool:hover {
 }
 
 .die-card__id {
-  font-size: 14px;
+  font-size: 16px;
   color: #e8eff6;
   font-weight: 600;
 }
 
 .die-card__pos {
   color: var(--text-faint);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .die-card__res {
@@ -669,7 +682,7 @@ button.tool:hover {
 }
 
 .die-card__res-v {
-  font-size: 15px;
+  font-size: 19px;
 }
 
 .die-card__res-v--ok {
@@ -697,8 +710,8 @@ button.tool:hover {
 }
 
 .thumb {
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   flex: 0 0 auto;
 }
 
@@ -755,7 +768,7 @@ button.tool:hover {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-dim);
   white-space: nowrap;
 }
@@ -782,12 +795,72 @@ button.tool:hover {
   box-shadow: 0 0 6px rgba(255, 82, 82, 0.6);
 }
 
-.die-card__note {
-  margin-top: 7px;
-  font-size: 10.5px;
+/* per-site residual strip on each card */
+.die-card__sites {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px dotted var(--line-soft);
+}
+
+.die-card__sites-label {
   color: var(--text-faint);
-  line-height: 1.35;
-  min-height: 14px;
+  font-size: 9.5px;
+  padding-bottom: 2px;
+}
+
+.sites {
+  display: flex;
+  gap: 7px;
+  align-items: flex-end;
+}
+
+.site {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.site__track {
+  width: 11px;
+  height: 26px;
+  display: flex;
+  align-items: flex-end;
+  background: #101720;
+  border-radius: 1px;
+}
+
+.site__bar {
+  width: 100%;
+  border-radius: 1px;
+}
+
+.site__bar--ok {
+  background: #2f7a51;
+}
+
+.site__bar--warn {
+  background: var(--amber);
+}
+
+.site__bar--fail {
+  background: var(--red);
+}
+
+.site__id {
+  color: var(--text-faint);
+  font-size: 9px;
+}
+
+.die-card__note {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+  line-height: 1.4;
+  min-height: 15px;
 }
 
 .die-card__note--fail {
@@ -1012,10 +1085,10 @@ button.tool:hover {
   border: 1px solid var(--line);
   border-radius: 3px;
   padding: 8px 9px;
-  max-height: 230px;
+  max-height: 300px;
   overflow-y: auto;
-  font-size: 10.5px;
-  line-height: 1.6;
+  font-size: 11px;
+  line-height: 1.65;
 }
 
 .log__line {
