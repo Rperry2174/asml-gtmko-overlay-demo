@@ -11,7 +11,9 @@ import { SITES, mag, nm } from './data.js';
 
 const PLANE = 40; // µm across, both axes
 const S = 9; // px per µm
-const PAD = { l: 42, t: 18, r: 18, b: 40 };
+// The right margin is wide enough to park a callout beside a mark near the
+// edge of the plane instead of over the geometry.
+const PAD = { l: 42, t: 18, r: 58, b: 40 };
 export const VB_W = PAD.l + PLANE * S + PAD.r;
 export const VB_H = PAD.t + PLANE * S + PAD.b;
 
@@ -148,6 +150,29 @@ function markGlyph(kind) {
 }
 
 /**
+ * An annotation parked beside a mark: backing box, leader line, one line of
+ * text per model term. It flips to the left of the mark when it would run off
+ * the drawing, and the backing box keeps it legible where it has to sit over
+ * geometry.
+ */
+function callout(cx, cy, lines, id) {
+  const w = 68;
+  const h = 9 + lines.length * 12;
+  const gap = 3.1 * S;
+  const flip = cx + gap + w > VB_W - 4;
+  const x = flip ? cx - gap - w : cx + gap;
+  const y = Math.max(2, cy - h / 2);
+  return `<g class="lv-callout" data-callout="${id}">
+      <line class="lv-callout__leader" x1="${flip ? cx - 2.6 * S : cx + 2.6 * S}" y1="${cy}"
+            x2="${flip ? x + w : x}" y2="${y + h / 2}" />
+      <rect class="lv-callout__bg" x="${x}" y="${y}" width="${w}" height="${h}" rx="2" />
+      ${lines
+        .map((t, i) => `<text x="${x + 5}" y="${y + 14 + i * 12}">${t}</text>`)
+        .join('')}
+    </g>`;
+}
+
+/**
  * @param {object} opts
  * @param {'golden'|'measured'} opts.mode
  * @param {{id:string,dx:number,dy:number,r:number}[]} opts.residuals
@@ -195,16 +220,11 @@ function marks({ mode, residuals, selected, showResiduals, showCallout, specNm }
     // Only the site under discussion gets a callout. Printing one per bad
     // site turns the crude-fit preview into overlapping text.
     if (showCallout && bad && (!selected || isSel)) {
-      const ox = cx + 3.4 * S;
-      const oy = cy - 1.6 * S;
       // θ comes from the local fit and only exists where one was made — the
       // crude translation-only model has no rotation term to show.
-      const theta = r.theta === undefined ? '' : `<text x="${ox}" y="${oy + 24}">θ  ${nm(r.theta, 2)}°</text>`;
-      out += `<g class="lv-callout" data-callout="${site.id}">
-                <text x="${ox}" y="${oy}">Δx ${nm(r.dx)} nm</text>
-                <text x="${ox}" y="${oy + 12}">Δy ${nm(r.dy)} nm</text>
-                ${theta}
-              </g>`;
+      const lines = [`Δx ${nm(r.dx)} nm`, `Δy ${nm(r.dy)} nm`];
+      if (r.theta !== undefined) lines.push(`θ  ${nm(r.theta, 2)}°`);
+      out += callout(cx, cy, lines, site.id);
     }
   }
   return out;

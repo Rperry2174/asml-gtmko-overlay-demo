@@ -558,6 +558,17 @@ button.tool:hover {
   transition: opacity 500ms ease;
 }
 
+.lv-callout__bg {
+  fill: rgba(9, 12, 17, 0.92);
+  stroke: #5d2b2b;
+  stroke-width: 1;
+}
+
+.lv-callout__leader {
+  stroke: #6e3232;
+  stroke-width: 1;
+}
+
 /* ------------------------------------------------------------- lot board */
 
 .kpis {
