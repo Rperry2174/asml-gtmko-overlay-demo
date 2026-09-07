@@ -12,7 +12,9 @@ import {
   SPEC_NM,
   applyFix,
   crudeFromResiduals,
+  dieStatus,
   getDie,
+  health,
   localFit,
   mag,
   maxResidual,
@@ -32,6 +34,11 @@ const resTone = (r) => (r > 8 ? 'fail' : r > SPEC_NM ? 'warn' : 'ok');
  * outcome of walking away before the run finished.
  */
 let runToken = 0;
+
+/** Invalidate any in-flight run. The router calls this on every navigation. */
+export function abandonFactoryRun() {
+  runToken += 1;
+}
 
 /** Rebuild the fit of an already-corrected die from the knob we recorded. */
 function fitFromKnob(die) {
@@ -224,7 +231,9 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId, token 
   log('Fitting r(x,y) = T + R·[x y]ᵀ.');
   if (!(await wait(1100))) return;
   log(
-    `Global-T fit rejected: it would push ${crude.broken.join(', ')} out of spec to chase ${siteId}.`,
+    crude.broken.length
+      ? `Global-T fit rejected: it would push ${crude.broken.join(', ')} out of spec to chase ${siteId}.`
+      : `Global-T fit rejected: it drags every good site toward the spec limit to chase ${siteId}.`,
     'bad',
   );
   log(`Fitting T + R locally at ${siteId} instead.`, 'good');
@@ -245,14 +254,14 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId, token 
   log('Re-simulating overlay with the corrected knob.');
   if (!(await wait(500))) return;
 
+  const site = die.sites.find((s) => s.id === siteId);
   const result = die.fixed
-    ? { before: worst.r, after: maxResidual(die) }
+    ? { before: worst.r, after: mag(site.dx, site.dy) }
     : (() => {
         const r = applyFix(die);
         return { before: r.before, after: r.after };
       })();
 
-  const site = die.sites.find((s) => s.id === siteId);
   setMarkResidual(app, 'measured', siteId, { dx: site.dx, dy: site.dy }, SPEC_NM);
   countTo('live-res', result.before, result.after, 900, (v) => `${v.toFixed(1)} nm`);
   document.getElementById('live-sub').textContent = `max |r| @ site ${siteId}`;
@@ -279,7 +288,13 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId, token 
       : `FAIL — still ${maxResidual(die).toFixed(1)} nm.`,
     pass ? 'good' : 'bad',
   );
-  done('verdict', pass ? 'Pass. Die is green.' : 'Still out of spec.');
+  // Overlay back in spec is not the same as a green die: the other health
+  // dimensions are not something an overlay knob can answer.
+  const green = pass && dieStatus(die) === 'ok';
+  done(
+    'verdict',
+    pass ? (green ? 'Pass. Die is green.' : 'Pass. Overlay in spec.') : 'Still out of spec.',
+  );
 
   const badge = app.querySelector('[data-panel="measured"] .pill');
   if (badge) {
@@ -287,15 +302,31 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId, token 
     badge.textContent = `RE-SIM · max |r| = ${maxResidual(die).toFixed(1)} nm`;
   }
 
+  const untouched = before
+    .filter((s) => s.id !== siteId)
+    .map((s) => s.id)
+    .join(', ');
   document.getElementById('verdict').innerHTML = pass
     ? `<div class="banner banner--ok">
-        <strong>Pass.</strong> ${die.id} is green. Site ${siteId} came back inside spec and A, C, D never moved.
+        <strong>Pass.</strong> ${
+          green
+            ? `${die.id} is green.`
+            : `Overlay on ${die.id} is clean, but ${stillOpen(die)} keeps it amber on the board.`
+        } Site ${siteId} came back inside spec and ${untouched} never moved.
         The lot board has already picked this up — go back and look.
       </div>`
     : `<div class="banner banner--warn"><strong>Still out.</strong> ${die.id} needs another pass.</div>`;
 
   setTldr(COPY.factoryDone(siteId, result.before, result.after));
   setStatus(`factory run · ${die.id}`, pass ? 'complete · pass' : 'complete · fail', `${LOT.file} · simulated`);
+}
+
+/** Health dimensions, overlay aside, that are still not clean on this die. */
+function stillOpen(die) {
+  return Object.entries(health(die))
+    .filter(([dim, status]) => dim !== 'overlay' && status !== 'ok')
+    .map(([dim]) => dim)
+    .join(', ');
 }
 
 /* --------------------------------------------------------------- widgets */

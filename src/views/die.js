@@ -218,11 +218,18 @@ function inspector(die, state, crude) {
       state.preview
         ? `<div class="banner banner--warn" style="margin-top:10px">
             One global shift of ${nm(crude.T.dx)}, ${nm(crude.T.dy)} nm.
-            Site ${die.outlier ?? worst.id} barely improves and ${crude.broken.join(', ')} go out of spec.
+            Site ${die.outlier ?? worst.id} barely improves and ${collateral(crude)}.
             This is the correction we are arguing against.
           </div>`
         : ''
     }`;
+}
+
+/** What the crude fit costs the sites that were already inside spec. */
+function collateral(crude) {
+  return crude.broken.length
+    ? `${crude.broken.join(', ')} go out of spec`
+    : 'every good site gets dragged toward the spec limit';
 }
 
 function siteLabel(die, id) {
