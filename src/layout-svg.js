@@ -197,10 +197,13 @@ function marks({ mode, residuals, selected, showResiduals, showCallout, specNm }
     if (showCallout && bad && (!selected || isSel)) {
       const ox = cx + 3.4 * S;
       const oy = cy - 1.6 * S;
+      // θ comes from the local fit and only exists where one was made — the
+      // crude translation-only model has no rotation term to show.
+      const theta = r.theta === undefined ? '' : `<text x="${ox}" y="${oy + 24}">θ  ${nm(r.theta, 2)}°</text>`;
       out += `<g class="lv-callout" data-callout="${site.id}">
                 <text x="${ox}" y="${oy}">Δx ${nm(r.dx)} nm</text>
                 <text x="${ox}" y="${oy + 12}">Δy ${nm(r.dy)} nm</text>
-                <text x="${ox}" y="${oy + 24}">|r| ${r.r.toFixed(1)} nm</text>
+                ${theta}
               </g>`;
     }
   }

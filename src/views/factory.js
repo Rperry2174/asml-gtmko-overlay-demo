@@ -138,9 +138,10 @@ export function renderFactory(app, dieId) {
     </aside>
   </div>`;
 
+  const shown = before.map((s) => (s.id === siteId ? { ...s, theta: fit.error.theta } : s));
   document.getElementById('panels').innerHTML = layoutPanel({
     mode: 'measured',
-    residuals: before,
+    residuals: shown,
     badge: `MEASURED · max |r| = ${worst.r.toFixed(1)} nm @ ${siteId}`,
     tone: resTone(worst.r),
     selected: siteId,

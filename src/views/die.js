@@ -76,6 +76,7 @@ export function renderDie(app, dieId) {
     const rs = residualsFor(die, state.preview ? 'crude' : 'measured');
     const crude = crudeGlobalFit(die);
     const maxNow = state.preview ? crude.maxAfter : maxResidual(die);
+    if (!state.preview) withTheta(die, rs);
 
     document.getElementById('panels').innerHTML =
       layoutPanel({
@@ -227,4 +228,11 @@ function inspector(die, state, crude) {
 function siteLabel(die, id) {
   const s = die.sites.find((x) => x.id === id);
   return s ? s.label : '';
+}
+
+/** Hang the fitted rotation off the outlier so the panel can call it out. */
+function withTheta(die, rs) {
+  const fit = localFit(die);
+  const target = rs.find((s) => s.id === fit.siteId);
+  if (target) target.theta = fit.error.theta;
 }
