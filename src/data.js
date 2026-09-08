@@ -183,6 +183,41 @@ export function getDie(id) {
   return DIES.find((d) => d.id === id);
 }
 
+/* --------------------------------------------------------- board ordering */
+
+/**
+ * The lot board in stage order: hard fails first, worst residual at the top,
+ * then the watch items, then everything already inside spec.
+ *
+ * Presentation only. Die IDs and wafer positions never change, so a die that
+ * gets fixed simply lands in `ok` on the next render.
+ *
+ * @param {object[]} dies
+ * @returns {{fail: object[], warn: object[], ok: object[]}}
+ */
+export function boardGroups(dies = DIES) {
+  const groups = { fail: [], warn: [], ok: [] };
+  for (const d of dies) groups[dieStatus(d)].push(d);
+  // Worst first in the two groups that need a decision; the in-spec tail stays
+  // in die order so it reads like inventory rather than a second ranking.
+  const worstFirst = (a, b) => maxResidual(b) - maxResidual(a) || a.id.localeCompare(b.id);
+  groups.fail.sort(worstFirst);
+  groups.warn.sort(worstFirst);
+  groups.ok.sort((a, b) => a.id.localeCompare(b.id));
+  return groups;
+}
+
+/** Flat fails-first order — the same sequence `boardGroups` renders. */
+export function failsFirst(dies = DIES) {
+  const g = boardGroups(dies);
+  return [...g.fail, ...g.warn, ...g.ok];
+}
+
+/** The other board order: the physical row/col walk the tool reports in. */
+export function waferOrder(dies = DIES) {
+  return [...dies].sort((a, b) => a.row - b.row || a.col - b.col);
+}
+
 /* ------------------------------------------------------------ the models */
 
 /**

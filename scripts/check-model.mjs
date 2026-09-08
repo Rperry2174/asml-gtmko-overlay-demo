@@ -14,14 +14,17 @@ import {
   DIES,
   SPEC_NM,
   applyFix,
+  boardGroups,
   crudeGlobalFit,
   dieStatus,
+  failsFirst,
   getDie,
   localFit,
   lotKpis,
   maxResidual,
   residuals,
   resetLot,
+  waferOrder,
 } from '../src/data.js';
 
 let passed = 0;
@@ -65,6 +68,34 @@ check('the local fit at B is a ~14 nm shift and a ~0.21 degree rotation', () => 
   assert.equal(fit.knob.theta, -fit.error.theta);
 });
 
+check('the board opens fails first, hero die at the top', () => {
+  const groups = boardGroups();
+  // Hard fails by worst residual: D07 (22 nm) leads, then D05, then D11.
+  assert.deepEqual(
+    groups.fail.map((d) => d.id),
+    ['D07', 'D05', 'D11'],
+  );
+  assert.deepEqual(
+    groups.warn.map((d) => d.id),
+    ['D03', 'D09'],
+  );
+  assert.equal(groups.ok.length, 7);
+
+  const order = failsFirst().map((d) => d.id);
+  assert.equal(order[0], 'D07');
+  assert.equal(order.length, DIES.length);
+  const lastFail = order.indexOf('D11');
+  const firstPassing = order.findIndex((id) => dieStatus(getDie(id)) === 'ok');
+  assert.ok(lastFail < firstPassing, 'every fail must come before the first passing die');
+});
+
+check('the wafer map order is still available, unchanged', () => {
+  assert.deepEqual(
+    waferOrder().map((d) => d.id),
+    DIES.map((d) => d.id),
+  );
+});
+
 check('applying the fix brings B inside spec and moves nothing else', () => {
   const d07 = getDie('D07');
   const before = residuals(d07);
@@ -88,6 +119,15 @@ check('fixing one die moves the lot board KPIs', () => {
   assert.equal(k.fixedCount, 1);
 });
 
+check('a fixed die leaves "needs fix" and joins the passing group', () => {
+  const groups = boardGroups();
+  assert.deepEqual(
+    groups.fail.map((d) => d.id),
+    ['D05', 'D11'],
+  );
+  assert.ok(groups.ok.some((d) => d.id === 'D07'));
+});
+
 check('reset puts the KPIs back to the state the walkthrough opens on', () => {
   const d07 = getDie('D07');
   resetLot();
@@ -109,10 +149,14 @@ check('reset puts the KPIs back to the state the walkthrough opens on', () => {
   assert.equal(d07.process, 'warn');
 });
 
-check('reset restores the original fail set', () => {
+check('reset restores the original fail set and board order', () => {
   assert.deepEqual(
     DIES.filter((d) => dieStatus(d) === 'fail').map((d) => d.id),
     ['D05', 'D07', 'D11'],
+  );
+  assert.deepEqual(
+    boardGroups().fail.map((d) => d.id),
+    ['D07', 'D05', 'D11'],
   );
 });
 

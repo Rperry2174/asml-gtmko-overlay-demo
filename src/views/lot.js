@@ -4,18 +4,26 @@ import {
   DIES,
   LOT,
   SPEC_NM,
+  boardGroups,
   dieStatus,
   health,
   lotKpis,
   maxResidual,
   residuals,
+  waferOrder,
   worstSite,
 } from '../data.js';
 import { dieThumb } from '../layout-svg.js';
 import { COPY, setTldr } from '../tldr.js';
 import { healthChips, kv, setStatus, setTabs, setTitleFile } from '../ui.js';
 
-const tone = (s) => (s === 'fail' ? 'fail' : s === 'warn' ? 'warn' : 'ok');
+/** How the board is sorted. Presentation state, so it lives with the view. */
+let sort = 'fails-first';
+
+/** Reset drops the board back to the order the walkthrough is written against. */
+export function resetBoardView() {
+  sort = 'fails-first';
+}
 
 function cardNote(die) {
   const status = dieStatus(die);
@@ -76,14 +84,75 @@ function dieCard(die) {
   </button>`;
 }
 
+/* --------------------------------------------------------- the board body */
+
+const SECTIONS = [
+  {
+    key: 'fail',
+    title: 'Needs fix',
+    note: 'worst residual first — open these before anything else',
+    empty: 'Nothing is failing. Every die in this lot is inside spec.',
+  },
+  { key: 'warn', title: 'Watching', note: 'drifting, not failing — leave the knobs alone' },
+  { key: 'ok', title: 'In spec', note: 'nothing to do here' },
+];
+
+function section({ key, title, count, note, body }) {
+  return `
+  <section class="board-section">
+    <header class="board-section__head">
+      <span class="board-section__dot board-section__dot--${key}"></span>
+      <h2 class="board-section__title">${title}</h2>
+      <span class="board-section__count">${count} die${count === 1 ? '' : 's'}</span>
+      <span class="board-section__note">${note}</span>
+    </header>
+    ${body}
+  </section>`;
+}
+
+/**
+ * Fails first is the stage default: a presenter should hit the dies that need a
+ * decision without hunting the grid. Wafer map is there for anyone who wants
+ * the physical layout back.
+ */
+function board() {
+  if (sort === 'wafer') {
+    return section({
+      key: 'wafer',
+      title: 'Wafer map',
+      count: DIES.length,
+      note: 'row / col order, as the tool reports it',
+      body: `<div class="dies">${waferOrder().map(dieCard).join('')}</div>`,
+    });
+  }
+
+  const groups = boardGroups();
+  return SECTIONS.filter((s) => groups[s.key].length || s.empty)
+    .map((s) =>
+      section({
+        key: s.key,
+        title: s.title,
+        count: groups[s.key].length,
+        note: groups[s.key].length ? s.note : '',
+        body: groups[s.key].length
+          ? `<div class="dies">${groups[s.key].map(dieCard).join('')}</div>`
+          : `<div class="banner banner--ok">${s.empty}</div>`,
+      }),
+    )
+    .join('');
+}
+
+/* ------------------------------------------------------------ the view */
+
 export function renderLot(app) {
   const k = lotKpis();
   setTabs('lot');
   setTitleFile(`${LOT.id} · lot board`);
   setTldr(COPY.lot(k));
 
-  const fails = DIES.filter((d) => dieStatus(d) === 'fail');
-  const watches = DIES.filter((d) => dieStatus(d) === 'warn');
+  const groups = boardGroups();
+  const fails = groups.fail;
+  const watches = groups.warn;
   const yieldTone = k.openFails > 0 ? 'warn' : 'ok';
 
   app.innerHTML = `
@@ -108,8 +177,8 @@ export function renderLot(app) {
     </aside>
 
     <section class="canvas">
-      <!-- Lot health: the summary band. Deliberately not shaped like the board
-           chrome below it — these are numbers, not filters. -->
+      <!-- Lot health: the summary band. Deliberately not shaped like the
+           board controls below it — these are numbers, not filters. -->
       <section class="lot-health">
         <header class="lot-health__head">
           <h2 class="lot-health__title">Lot health · current state</h2>
@@ -134,13 +203,16 @@ export function renderLot(app) {
         </div>
       </section>
 
-      <div class="toolbar">
-        <span class="tool tool--active">lot view</span>
-        <span class="tool">${DIES.length} dies</span>
-        <span class="toolbar__spacer">click any die to open the layout viewer</span>
+      <div class="board-controls">
+        <span class="board-controls__label">Board order</span>
+        <div class="seg" role="group" aria-label="Board order">
+          <button class="seg__btn ${sort === 'fails-first' ? 'is-on' : ''}" data-sort="fails-first">Fails first</button>
+          <button class="seg__btn ${sort === 'wafer' ? 'is-on' : ''}" data-sort="wafer">Wafer map</button>
+        </div>
+        <span class="board-controls__hint">click any die to open the layout viewer</span>
       </div>
 
-      <div class="dies">${DIES.map(dieCard).join('')}</div>
+      <div class="board">${board()}</div>
     </section>
 
     <aside class="rail rail--right">
@@ -184,6 +256,13 @@ export function renderLot(app) {
   app.querySelectorAll('[data-die]').forEach((btn) => {
     btn.addEventListener('click', () => {
       location.hash = `#/die/${btn.dataset.die}`;
+    });
+  });
+
+  app.querySelectorAll('[data-sort]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sort = btn.dataset.sort;
+      renderLot(app);
     });
   });
 }

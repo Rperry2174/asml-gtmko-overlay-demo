@@ -30,16 +30,17 @@ npm test             # asserts the numbers the pitch depends on
 
 `npm test` is a handful of assertions over the data model, not a UI suite. It checks that B really
 is 22 nm out, that the crude fit really does break A, C and D, that the fix moves nothing it should
-not, that the lot KPIs move afterwards, and that **Reset demo** puts every one of those numbers
-back — so nobody edits the demo data and quietly breaks a claim being made out loud on stage.
+not, that the lot KPIs move afterwards, that the board opens fails-first with D07 on top, and that
+**Reset demo** puts every one of those numbers back — so nobody edits the demo data and quietly
+breaks a claim being made out loud on stage.
 
 ## Reset demo
 
 **Reset demo** sits in the titlebar, so it is one click away from every view. It restores the
-authored opening state — 75% yield, 22.0 nm at D07, three open fails, no knobs turned — and drops
-you on the lot board. Safe to mash between runs, including mid-factory-run: the pipeline is
-abandoned before the lot is restored, so a run in flight cannot write a fix into the lot you just
-reset. A small **Demo reset** flash in the titlebar confirms it fired.
+authored opening state — 75% yield, 22.0 nm at D07, three open fails, no knobs turned, board back
+to fails-first — and drops you on the lot board. Safe to mash between runs, including mid-factory-run:
+the pipeline is abandoned before the lot is restored, so a run in flight cannot write a fix into the
+lot you just reset. A small **Demo reset** flash in the titlebar confirms it fired.
 
 Run the pitch, hand the laptop to the next person, reset, run it again.
 
@@ -49,11 +50,15 @@ Five minutes of clicking, in this order. Hit **Reset demo** first if someone has
 
 **1. Lot board** (`#/lot`) — twelve dies from lot `LOT-2291-A`. Each card carries four health
 chips (Lithography, Overlay, Metrology, Process), a max residual, and a per-site bar strip.
-Three dies are red.
 
 The board leads with a **Lot health · current state** band — one summary surface, big numbers,
-sitting above the board chrome so it never reads as a row of tabs: **75% predicted yield,
+sitting above the board controls so it never reads as a row of tabs: **75% predicted yield,
 22.0 nm max residual, 3 open fails.**
+
+Below it the dies are grouped **fails first** — *Needs fix* (worst residual at the top, so D07 and
+its 22 nm is the first card on screen), then *Watching*, then *In spec*. Nobody has to hunt a
+wafer grid for the red ones. The **Wafer map** button in the board controls puts the physical
+row/col order back if someone asks for it. Die IDs never change; only the display order does.
 
 **2. Open D07** — the split view. Golden on the left is design intent. Measured on the right is
 what actually printed. Marks A, C and D landed inside 1 nm. Site B is 22 nm out, drawn in red
@@ -68,11 +73,11 @@ fit model, propose process knobs, re-sim overlay, pass/fail. Site B slides home 
 to gold, the residual counts down to 0.6 nm, and the knob table shows three green rows at B with
 the four global rows untouched. The run log says what changed.
 
-**5. Go back to the lot board** — D07 is green, predicted yield is 83%, open fails is 2. The fix
-mutated the shared state, so the board reflects it.
+**5. Go back to the lot board** — D07 has moved out of *Needs fix* and into *In spec*, predicted
+yield is 83%, open fails is 2. The fix mutated the shared state, so the board reflects it.
 
-Two more dies (D05, D11) are still failing if you want to run the loop a second time. When you are
-done, **Reset demo** puts all three fails back.
+Two more dies (D05, D11) are still failing if you want to run the loop a second time — they are the
+top of *Needs fix* now. When you are done, **Reset demo** puts all three fails back.
 
 ## The TLDR strip
 
@@ -112,7 +117,7 @@ and a 0.21° rotation at B, and nothing anywhere else.
 ```
 index.html            app shell: titlebar, Reset demo, TLDR slot, status bar
 src/main.js           hash router — #/lot, #/die/:id, #/die/:id/run — and the reset
-src/data.js           the 12 dies, both model fits, the fix that mutates state, and the reset
+src/data.js           the 12 dies, both model fits, the fix that mutates state, board order, reset
 src/layout-svg.js     the coordinate plane, reticle geometry and the four marks
 src/tldr.js           story strip copy and tone
 src/ui.js             health chips, layer rail, status bar

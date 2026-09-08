@@ -697,6 +697,113 @@ button.tool:hover {
   margin-top: 4px;
 }
 
+/* Board controls: sort, not summary. Small, outlined, clearly interactive. */
+.board-controls {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.board-controls__label {
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.seg {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.seg__btn {
+  padding: 4px 11px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #19202a;
+  color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.seg__btn:last-child {
+  border-right: 0;
+}
+
+.seg__btn:hover {
+  background: #1f2833;
+  color: var(--text);
+}
+
+.seg__btn.is-on {
+  background: #10222c;
+  color: #7fdcff;
+}
+
+.board-controls__hint {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+
+.board-section + .board-section {
+  margin-top: 18px;
+}
+
+.board-section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.board-section__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  align-self: center;
+  background: var(--text-faint);
+}
+
+.board-section__dot--fail {
+  background: var(--red);
+  box-shadow: 0 0 6px rgba(255, 82, 82, 0.6);
+}
+
+.board-section__dot--warn {
+  background: var(--amber);
+}
+
+.board-section__dot--ok {
+  background: var(--green);
+}
+
+.board-section__title {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #dce5ee;
+}
+
+.board-section__count {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.board-section__note {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
 .kpis {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
