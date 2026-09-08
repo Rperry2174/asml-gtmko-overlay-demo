@@ -10,7 +10,7 @@
 
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -36,7 +36,7 @@ check("the agent name resolves to weather-agent every way it can", () => {
   // The hosted bot is keyed on the winner, so all three have to agree.
   assert.match(agentTs, /name:\s*"weather-agent"/);
   assert.equal(pkg.name, "weather-agent");
-  assert.equal(root.split("/").at(-1), "weather-agent");
+  assert.equal(basename(root), "weather-agent");
 });
 
 check('runtime is "grokbot"', () => {
