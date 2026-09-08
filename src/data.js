@@ -36,12 +36,20 @@ export const SITES = [
 const ZERO_KNOBS = () => ({ dx: 0.0, dy: 0.0, theta: 0.0, mag: 0.0 });
 
 /**
+ * The authored opening state of one die, kept apart from the live object so
+ * the demo can be put back to it between runs on stage.
+ *
  * @param {string} id
  * @param {[number, number]} pos wafer-map row/col
  * @param {Record<string, [number, number]>} residuals per-site [dx, dy] in nm
  * @param {object} extra
  */
 function die(id, pos, residuals, extra = {}) {
+  return { id, pos, residuals, extra };
+}
+
+/** The live, mutable die the views read and the fix writes into. */
+function buildDie({ id, pos, residuals, extra }) {
   return {
     id,
     row: pos[0],
@@ -63,7 +71,7 @@ function die(id, pos, residuals, extra = {}) {
 }
 
 /** Small, non-random residuals so the demo reads the same every time. */
-export const DIES = [
+const DIE_SPECS = [
   die('D01', [1, 2], { A: [0.3, 0.4], B: [-0.2, 0.5], C: [0.4, -0.2], D: [0.2, 0.3] }),
   die('D02', [1, 3], { A: [0.5, -0.3], B: [0.6, 0.4], C: [-0.4, 0.3], D: [0.3, 0.5] }),
   die('D03', [1, 4], { A: [0.6, 0.4], B: [0.7, -0.5], C: [2.4, -2.4], D: [0.5, 0.4] }, {
@@ -108,6 +116,24 @@ export const DIES = [
   }),
   die('D12', [4, 2], { A: [0.5, 0.6], B: [0.4, -0.5], C: [0.6, 0.4], D: [0.5, 0.4] }),
 ];
+
+export const DIES = DIE_SPECS.map(buildDie);
+
+/**
+ * Put the lot back to the state the walkthrough opens on: 75% predicted yield,
+ * 22.0 nm at D07, three open fails, no knobs turned.
+ *
+ * Each die is restored in place rather than replaced, so a view or an in-flight
+ * factory run holding a reference sees the reset lot instead of a detached copy
+ * of the old one.
+ */
+export function resetLot() {
+  DIE_SPECS.forEach((spec, i) => {
+    const live = DIES[i];
+    for (const key of Object.keys(live)) delete live[key];
+    Object.assign(live, buildDie(spec));
+  });
+}
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -155,6 +181,41 @@ export function dieStatus(die) {
 
 export function getDie(id) {
   return DIES.find((d) => d.id === id);
+}
+
+/* --------------------------------------------------------- board ordering */
+
+/**
+ * The lot board in stage order: hard fails first, worst residual at the top,
+ * then the watch items, then everything already inside spec.
+ *
+ * Presentation only. Die IDs and wafer positions never change, so a die that
+ * gets fixed simply lands in `ok` on the next render.
+ *
+ * @param {object[]} dies
+ * @returns {{fail: object[], warn: object[], ok: object[]}}
+ */
+export function boardGroups(dies = DIES) {
+  const groups = { fail: [], warn: [], ok: [] };
+  for (const d of dies) groups[dieStatus(d)].push(d);
+  // Worst first in the two groups that need a decision; the in-spec tail stays
+  // in die order so it reads like inventory rather than a second ranking.
+  const worstFirst = (a, b) => maxResidual(b) - maxResidual(a) || a.id.localeCompare(b.id);
+  groups.fail.sort(worstFirst);
+  groups.warn.sort(worstFirst);
+  groups.ok.sort((a, b) => a.id.localeCompare(b.id));
+  return groups;
+}
+
+/** Flat fails-first order — the same sequence `boardGroups` renders. */
+export function failsFirst(dies = DIES) {
+  const g = boardGroups(dies);
+  return [...g.fail, ...g.warn, ...g.ok];
+}
+
+/** The other board order: the physical row/col walk the tool reports in. */
+export function waferOrder(dies = DIES) {
+  return [...dies].sort((a, b) => a.row - b.row || a.col - b.col);
 }
 
 /* ------------------------------------------------------------ the models */
