@@ -103,7 +103,35 @@ src/tldr.js           story strip copy and tone
 src/ui.js             health chips, layer rail, status bar
 src/views/            lot.js · die.js · factory.js
 src/styles.css        dark layout-tool theme
+agents/weather-agent/ separate Agent SDK project — see below
 ```
 
 To change the story, edit `src/data.js` (residuals, which site is the outlier, health per
 dimension) and `src/tldr.js` (the words). The views derive everything else.
+
+## `agents/weather-agent` — Agent SDK hello-world
+
+A second, independent project lives in [`agents/weather-agent`](agents/weather-agent/README.md):
+an Agent SDK (`@cursor/july`) agent that reads a forecast for a city and decides whether an
+outdoor plan holds or moves. It exists to get a real Agent SDK turn on stage at the hackathon,
+and it shares nothing with the overlay demo above — no imports, no build step, and
+`@cursor/july` is **not** a dependency of this Vite app. `npm run dev` is unaffected.
+
+It runs on the experimental `grokbot` runtime, so the turn executes on Cursor's hosted Grok Bot
+box rather than locally. That means it needs credentials for every command that opens a session:
+
+```bash
+npm run weather:install
+cd agents/weather-agent && npx agent-sdk login   # or export CURSOR_API_KEY=...
+cd ../.. && npm run weather:dev                  # http://127.0.0.1:3000/playground
+```
+
+Checks that need no key: `npm run weather:validate`, `weather:check`, `weather:test`.
+
+After one successful turn, expect a Grok Bot named **`weather-agent`** in the Cursor app — the
+backend get-or-creates it by (user, agent name). If it is missing, create it with that exact
+name first and re-send. Only content the agent passes to `SendToUser` is visible to the user.
+
+**Experimental and internal only — do not demo the weather agent to customers.** The overlay
+demo above is the customer-facing artifact. The agent README covers the rest, including the
+capabilities the grokbot runtime refuses outright.
