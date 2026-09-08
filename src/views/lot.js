@@ -108,29 +108,36 @@ export function renderLot(app) {
     </aside>
 
     <section class="canvas">
+      <!-- Lot health: the summary band. Deliberately not shaped like the board
+           chrome below it — these are numbers, not filters. -->
+      <section class="lot-health">
+        <header class="lot-health__head">
+          <h2 class="lot-health__title">Lot health · current state</h2>
+          <span class="lot-health__meta">${LOT.id} · ${DIES.length} dies · measured after exposure</span>
+        </header>
+        <div class="lot-health__stats">
+          <div class="stat">
+            <div class="stat__label">Predicted yield</div>
+            <div class="stat__value stat__value--${yieldTone}">${k.yield.toFixed(0)}<span class="stat__unit">%</span></div>
+            <div class="stat__sub">${DIES.length - k.openFails} of ${DIES.length} dies shippable</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Max residual</div>
+            <div class="stat__value stat__value--${k.maxResidual > 8 ? 'fail' : k.maxResidual > SPEC_NM ? 'warn' : 'ok'}">${k.maxResidual.toFixed(1)}<span class="stat__unit">nm</span></div>
+            <div class="stat__sub">worst site anywhere in the lot · spec ${SPEC_NM.toFixed(1)} nm</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Open fails</div>
+            <div class="stat__value stat__value--${k.openFails ? 'fail' : 'ok'}">${k.openFails}</div>
+            <div class="stat__sub">${k.fixedCount} fixed this session</div>
+          </div>
+        </div>
+      </section>
+
       <div class="toolbar">
         <span class="tool tool--active">lot view</span>
         <span class="tool">${DIES.length} dies</span>
-        <span class="tool ${k.openFails ? 'tool--alert' : ''}">${k.openFails} open fail${k.openFails === 1 ? '' : 's'}</span>
         <span class="toolbar__spacer">click any die to open the layout viewer</span>
-      </div>
-
-      <div class="kpis">
-        <div class="kpi">
-          <div class="kpi__label">Predicted yield</div>
-          <div class="kpi__value kpi__value--${yieldTone}">${k.yield.toFixed(0)}%</div>
-          <div class="kpi__sub">${DIES.length - k.openFails} of ${DIES.length} dies shippable</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi__label">Max residual</div>
-          <div class="kpi__value kpi__value--${k.maxResidual > 8 ? 'fail' : k.maxResidual > SPEC_NM ? 'warn' : 'ok'}">${k.maxResidual.toFixed(1)}<span style="font-size:15px"> nm</span></div>
-          <div class="kpi__sub">worst site anywhere in the lot · spec ${SPEC_NM.toFixed(1)} nm</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi__label">Open fails</div>
-          <div class="kpi__value kpi__value--${k.openFails ? 'fail' : 'ok'}">${k.openFails}</div>
-          <div class="kpi__sub">${k.fixedCount} fixed this session</div>
-        </div>
       </div>
 
       <div class="dies">${DIES.map(dieCard).join('')}</div>

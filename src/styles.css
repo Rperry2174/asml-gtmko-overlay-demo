@@ -609,6 +609,94 @@ button.tool:hover {
 
 /* ------------------------------------------------------------- lot board */
 
+/* The lot health band. One surface with internal dividers, not three
+   free-floating chips — so it never reads as a row of tabs or filters. */
+.lot-health {
+  background: linear-gradient(180deg, #18202b 0%, #131924 100%);
+  border: 1px solid #2b3746;
+  border-radius: 5px;
+  padding: 11px 16px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.lot-health__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lot-health__title {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #b6c3d2;
+}
+
+.lot-health__meta {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.lot-health__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.stat + .stat {
+  border-left: 1px solid var(--line);
+  padding-left: 18px;
+}
+
+.stat__label {
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Sized to be read from the back of a room, not from a laptop. */
+.stat__value {
+  font-size: 46px;
+  line-height: 1.05;
+  margin-top: 4px;
+  color: #eaf1f8;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+}
+
+.stat__unit {
+  font-size: 19px;
+  letter-spacing: 0;
+  margin-left: 3px;
+  color: inherit;
+  opacity: 0.75;
+}
+
+.stat__value--ok {
+  color: var(--green);
+}
+
+.stat__value--warn {
+  color: var(--amber);
+}
+
+.stat__value--fail {
+  color: var(--red);
+}
+
+.stat__sub {
+  color: var(--text-faint);
+  font-size: 10.5px;
+  margin-top: 4px;
+}
+
 .kpis {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

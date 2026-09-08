@@ -49,7 +49,11 @@ Five minutes of clicking, in this order. Hit **Reset demo** first if someone has
 
 **1. Lot board** (`#/lot`) — twelve dies from lot `LOT-2291-A`. Each card carries four health
 chips (Lithography, Overlay, Metrology, Process), a max residual, and a per-site bar strip.
-Three dies are red. Point at the KPIs: **75% predicted yield, 22.0 nm max residual, 3 open fails.**
+Three dies are red.
+
+The board leads with a **Lot health · current state** band — one summary surface, big numbers,
+sitting above the board chrome so it never reads as a row of tabs: **75% predicted yield,
+22.0 nm max residual, 3 open fails.**
 
 **2. Open D07** — the split view. Golden on the left is design intent. Measured on the right is
 what actually printed. Marks A, C and D landed inside 1 nm. Site B is 22 nm out, drawn in red
