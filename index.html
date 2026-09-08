@@ -14,6 +14,16 @@
       <span class="titlebar__file" id="titlebar-file">die_overlay_demo.gds</span>
       <nav class="titlebar__tabs" id="titlebar-tabs"></nav>
       <span class="titlebar__hint">inspired by KLayout / Virtuoso · µm grid</span>
+      <!-- Reachable from every view: one click puts the lot back to its opening state. -->
+      <span class="titlebar__flash" id="reset-flash" hidden>Demo reset</span>
+      <button
+        class="titlebar__reset"
+        id="reset-demo"
+        type="button"
+        title="Restore the lot to its opening state and go back to the lot board"
+      >
+        <span aria-hidden="true">↺</span> Reset demo
+      </button>
     </header>
 
     <!-- The story strip. Same place, same shape, every view. -->

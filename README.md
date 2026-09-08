@@ -30,12 +30,22 @@ npm test             # asserts the numbers the pitch depends on
 
 `npm test` is a handful of assertions over the data model, not a UI suite. It checks that B really
 is 22 nm out, that the crude fit really does break A, C and D, that the fix moves nothing it should
-not, and that the lot KPIs move afterwards — so nobody edits the demo data and quietly breaks a
-claim being made out loud on stage.
+not, that the lot KPIs move afterwards, and that **Reset demo** puts every one of those numbers
+back — so nobody edits the demo data and quietly breaks a claim being made out loud on stage.
+
+## Reset demo
+
+**Reset demo** sits in the titlebar, so it is one click away from every view. It restores the
+authored opening state — 75% yield, 22.0 nm at D07, three open fails, no knobs turned — and drops
+you on the lot board. Safe to mash between runs, including mid-factory-run: the pipeline is
+abandoned before the lot is restored, so a run in flight cannot write a fix into the lot you just
+reset. A small **Demo reset** flash in the titlebar confirms it fired.
+
+Run the pitch, hand the laptop to the next person, reset, run it again.
 
 ## The walkthrough
 
-Five minutes of clicking, in this order.
+Five minutes of clicking, in this order. Hit **Reset demo** first if someone has already driven it.
 
 **1. Lot board** (`#/lot`) — twelve dies from lot `LOT-2291-A`. Each card carries four health
 chips (Lithography, Overlay, Metrology, Process), a max residual, and a per-site bar strip.
@@ -57,7 +67,8 @@ the four global rows untouched. The run log says what changed.
 **5. Go back to the lot board** — D07 is green, predicted yield is 83%, open fails is 2. The fix
 mutated the shared state, so the board reflects it.
 
-Two more dies (D05, D11) are still failing if you want to run the loop a second time.
+Two more dies (D05, D11) are still failing if you want to run the loop a second time. When you are
+done, **Reset demo** puts all three fails back.
 
 ## The TLDR strip
 
@@ -95,9 +106,9 @@ and a 0.21° rotation at B, and nothing anywhere else.
 ## Layout
 
 ```
-index.html            app shell: titlebar, TLDR slot, status bar
-src/main.js           hash router — #/lot, #/die/:id, #/die/:id/run
-src/data.js           the 12 dies, both model fits, and the fix that mutates state
+index.html            app shell: titlebar, Reset demo, TLDR slot, status bar
+src/main.js           hash router — #/lot, #/die/:id, #/die/:id/run — and the reset
+src/data.js           the 12 dies, both model fits, the fix that mutates state, and the reset
 src/layout-svg.js     the coordinate plane, reticle geometry and the four marks
 src/tldr.js           story strip copy and tone
 src/ui.js             health chips, layer rail, status bar

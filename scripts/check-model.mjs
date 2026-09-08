@@ -21,6 +21,7 @@ import {
   lotKpis,
   maxResidual,
   residuals,
+  resetLot,
 } from '../src/data.js';
 
 let passed = 0;
@@ -85,6 +86,45 @@ check('fixing one die moves the lot board KPIs', () => {
   assert.equal(k.openFails, 2);
   assert.equal(k.yield.toFixed(0), '83');
   assert.equal(k.fixedCount, 1);
+});
+
+check('reset puts the KPIs back to the state the walkthrough opens on', () => {
+  const d07 = getDie('D07');
+  resetLot();
+
+  const k = lotKpis();
+  assert.equal(k.yield.toFixed(0), '75');
+  assert.equal(k.maxResidual.toFixed(1), '22.0');
+  assert.equal(k.openFails, 3);
+  assert.equal(k.fixedCount, 0);
+
+  // Restored in place, so a view still holding the old reference sees the
+  // reset die rather than a stale copy of the fixed one.
+  assert.equal(getDie('D07'), d07);
+  assert.equal(d07.fixed, false);
+  assert.equal(maxResidual(d07).toFixed(1), '22.0');
+  assert.deepEqual(Object.keys(d07.knobs.local), []);
+  assert.equal(d07.preFix, undefined);
+  assert.equal(d07.log.length, 0);
+  assert.equal(d07.process, 'warn');
+});
+
+check('reset restores the original fail set', () => {
+  assert.deepEqual(
+    DIES.filter((d) => dieStatus(d) === 'fail').map((d) => d.id),
+    ['D05', 'D07', 'D11'],
+  );
+});
+
+check('reset is idempotent — mash it as often as you like', () => {
+  applyFix(getDie('D05'));
+  applyFix(getDie('D11'));
+  resetLot();
+  resetLot();
+  const k = lotKpis();
+  assert.equal(k.openFails, 3);
+  assert.equal(k.yield.toFixed(0), '75');
+  assert.equal(k.maxResidual.toFixed(1), '22.0');
 });
 
 console.log(`\n${passed} claims hold.`);
