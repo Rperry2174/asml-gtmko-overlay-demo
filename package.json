@@ -1,0 +1,16 @@
+{
+  "name": "asml-gtmko-overlay-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ASML GTMKO stage demo — lot board, overlay/metrology layout viewer, TLDR strip, manual factory fix",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node scripts/check-model.mjs"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}

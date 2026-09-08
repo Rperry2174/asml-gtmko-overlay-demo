@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Layout Viewer — ASML GTMKO overlay demo</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <!-- App chrome: KLayout / Virtuoso vibe. Purely decorative. -->
+    <header class="titlebar">
+      <span class="titlebar__app">Layout Viewer</span>
+      <span class="titlebar__file" id="titlebar-file">die_overlay_demo.gds</span>
+      <nav class="titlebar__tabs" id="titlebar-tabs"></nav>
+      <span class="titlebar__hint">inspired by KLayout / Virtuoso · µm grid</span>
+    </header>
+
+    <!-- The story strip. Same place, same shape, every view. -->
+    <div class="tldr" id="tldr" data-tone="neutral">
+      <div class="tldr__inner">
+        <p class="tldr__text" id="tldr-text"></p>
+        <p class="tldr__sub" id="tldr-sub"></p>
+      </div>
+    </div>
+
+    <main id="app" class="app"></main>
+
+    <footer class="statusbar">
+      <span id="status-left">ready</span>
+      <span id="status-mid"></span>
+      <span id="status-right">die_overlay_demo.gds · read-only</span>
+    </footer>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
