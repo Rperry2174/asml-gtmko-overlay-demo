@@ -104,15 +104,16 @@ fit model, propose process knobs, re-sim overlay, pass/fail. Site B slides home 
 to gold, the residual counts down to 0.6 nm, and the knob table shows three green rows at B with
 the four global rows untouched. The run log says what changed.
 
-The other lane is **"Run Cloud Agent fix (opens a PR)"**, next to it on the die view: the same miss
-handed to a coding task instead of to the floor. It opens the identical incident with the PR check
-already ticked, and leaves the die out of spec — because a PR is not a knob.
+The other lane is **"Submit recipe change"**, next to it on the die view: the same miss written up
+as an overlay correction against the recipe instead of worked on the floor. It opens the identical
+incident with the recipe-change check already ticked, and leaves the die out of spec — a filed
+change is not a knob turned. The card that appears is `OCR-4821`, in review and pending apply.
 
 **5. The recovery rail** — the run finishes and a recovery panel appears under the verdict. The
 full version is at `#/recovery`, in the titlebar from any view, and linked from the lot board.
 
 The die is green; the incident is not closed. Five checks say so:
-**PR · Impact logged · Shift notified · Weekly ROI · Backlog.** Two Grok Bots are on the lane —
+**Recipe change · Impact logged · Shift notified · Weekly ROI · Backlog.** Two Grok Bots are on the lane —
 `lot-incident-owner` woke on the red lot and handed the priced question to `yield-impact-analyst`.
 Expand *message body sent to yield-impact-analyst* to show the payload; it is the same JSON the
 agent project is written against, not a mock-up.
@@ -154,9 +155,9 @@ The append genuinely POSTs, genuinely forwards to Google Sheets when the dev ser
 and genuinely reports when it did not.
 
 Not real: the numbers themselves are authored, the factory pipeline is a simulation on a timer, the
-Cloud Agent PR card is authored, and the two Grok Bots are drawn as a lane rather than called live
-from the app. **The app makes no model calls.** Nothing in the UI claims otherwise, and no vendor is
-named in the product surface.
+`OCR-4821` correction record is authored — no change-management system is called — and the two Grok
+Bots are drawn as a lane rather than called live from the app. **The app makes no model calls.**
+Nothing in the UI claims otherwise, and no vendor is named in the product surface.
 
 One display convention worth knowing before you present it: mark offsets are drawn **×100**, because
 22 nm on a 40 µm plane is a thousandth of a pixel and would be invisible. The panel says so on

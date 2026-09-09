@@ -76,9 +76,9 @@ the sheet. Columns, left to right, exactly this order:
 | 8 | `cost_per_wafer_usd` | the value you used, usually `8500` |
 | 9 | `escape_prob_if_missed` | the value you used, usually `0.35` |
 | 10 | `cost_avoided_usd` | the result, whole dollars, no `$` and no commas |
-| 11 | `caught_by` | `manual factory run` or `cloud agent` |
+| 11 | `caught_by` | `manual factory run` or `recipe change` |
 | 12 | `owner` | who holds the incident, usually `lot-incident-owner` |
-| 13 | `pr_url` | the linked PR, blank if there is none |
+| 13 | `recipe_change_id` | the filed overlay correction, e.g. `OCR-4821`; blank if there is none |
 | 14 | `notes` | one clause, or blank |
 
 Blank means an empty cell, not the word `null`.

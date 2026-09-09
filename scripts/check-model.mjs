@@ -98,8 +98,8 @@ check('the impact row matches the sheet columns, dollars included', () => {
   assert.equal(row[SHEET_COLUMNS.indexOf('wafers_at_risk')], 60);
   assert.equal(row[SHEET_COLUMNS.indexOf('cost_per_wafer_usd')], 8500);
   assert.equal(row[SHEET_COLUMNS.indexOf('escape_prob_if_missed')], 0.35);
-  // An unset PR is an empty cell, not the string "null".
-  assert.equal(row[SHEET_COLUMNS.indexOf('pr_url')], '');
+  // An incident with no recipe change filed is an empty cell, not "null".
+  assert.equal(row[SHEET_COLUMNS.indexOf('recipe_change_id')], '');
 });
 
 check('the crude global-T fit pushes A, C and D out of spec', () => {

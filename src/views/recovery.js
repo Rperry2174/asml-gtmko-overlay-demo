@@ -28,11 +28,11 @@ import {
   incidentPayload,
   logImpact,
   notifyShift,
-  openPr,
   openSteps,
   pendingImpact,
   showBacklog,
   showWeeklyPack,
+  submitRecipeChange,
 } from '../recovery.js';
 import { COPY, setTldr } from '../tldr.js';
 import { kv, setStatus, setTabs, setTitleFile } from '../ui.js';
@@ -82,8 +82,8 @@ export function mountRecoveryPanel(host, { compact = false, onUpdate = null } = 
     host.querySelectorAll('[data-recovery-action]').forEach((btn) => {
       btn.addEventListener('click', () => {
         switch (btn.dataset.recoveryAction) {
-          case 'pr':
-            openPr();
+          case 'recipe':
+            submitRecipeChange();
             paint();
             break;
           case 'impact':
@@ -177,13 +177,15 @@ function checkRow(step, job, busy) {
 }
 
 /** Steps that are a side effect rather than a view — clicking twice is wrong. */
-const ONE_SHOT = new Set(['pr', 'impact', 'shift']);
+const ONE_SHOT = new Set(['recipe', 'impact', 'shift']);
 
 function stepDetail(id, job) {
   const d = job.detail;
   switch (id) {
-    case 'pr':
-      return d.pr ? `#${d.pr.number} · ${d.pr.branch} · ${d.pr.state}` : '—';
+    case 'recipe':
+      return d.recipe
+        ? `${d.recipe.id} · ${d.recipe.tool} · site ${job.siteId} · ${d.recipe.status}`
+        : '—';
     case 'impact':
       if (job.steps.impact === 'pending') return 'appending…';
       return d.impact ? `${usd(job.costAvoided)} · ${TRANSPORT_NOTE[d.impact.transport]}` : '—';
@@ -255,31 +257,36 @@ function botLane(job, compact) {
 
 function detailCards(job, open) {
   return [
-    job.detail.pr ? prCard(job.detail.pr) : '',
+    job.detail.recipe ? recipeCard(job.detail.recipe) : '',
     job.detail.impact ? impactCard(job) : '',
     open.weekly ? weeklyCard() : '',
     open.backlog ? backlogCard() : '',
   ].join('');
 }
 
-function prCard(pr) {
+function recipeCard(change) {
+  const field = (label, value) => `<tr><td>${label}</td><td class="rowtable__v">${value}</td></tr>`;
   return `
   <article class="card">
     <header class="card__head">
-      <span class="pill pill--info">PR · simulated</span>
-      <h3 class="card__title">#${pr.number} — ${pr.title}</h3>
+      <span class="pill pill--info">Recipe change · queued</span>
+      <h3 class="card__title">${change.id} — overlay correction</h3>
     </header>
     <div class="card__body">
-      <div class="diffstat">
-        <code>${pr.branch}</code>
-        <span>${pr.files} files</span>
-        <span class="diffstat__add">+${pr.additions}</span>
-        <span class="diffstat__del">−${pr.deletions}</span>
-        <span>${pr.state}</span>
-      </div>
+      <table class="rowtable">
+        <tbody>
+          ${field('correction id', change.id)}
+          ${field('tool', change.tool)}
+          ${field('recipe', change.recipe)}
+          ${field('scope', change.scope)}
+          ${field('proposed correction', change.correction)}
+          ${field('status', `${change.status} · ${change.apply}`)}
+        </tbody>
+      </table>
       <p class="section-note">
-        The coding half of the recovery: a change to the recipe, reviewed like any other change.
-        No forge is called in this demo — the card is authored.
+        Filed, not applied. The correction is queued for process review and nothing on the tool has
+        moved, so the site is still out of spec — a filed change is not a knob turned. Simulated:
+        the record is authored here, no change-management system is called.
       </p>
     </div>
   </article>`;
@@ -354,7 +361,7 @@ function emptyState() {
   <section class="recovery">
     <div class="banner banner--info">
       <strong>No recovery job open.</strong> Open a failing die and either run the fix by hand or
-      hand it to a Cloud Agent — both land here.
+      submit a recipe change — both land here.
     </div>
     <p class="section-note">
       The artifacts below stay put between incidents. The checklist is what changes.
