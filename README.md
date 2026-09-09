@@ -47,17 +47,17 @@ the demo data and quietly break a claim being made out loud on stage.
 
 ## Artifacts
 
-The recovery half of the story writes to three places. Two of them are stubs today, on purpose,
+The recovery half of the story writes to three places. One of them is a stub today, on purpose,
 and the UI says which:
 
 | what | where | state |
 | --- | --- | --- |
 | Yield impact log | [Google Sheet](https://docs.google.com/spreadsheets/d/1h0MhoLHz8A76EV7hfalYlFDuodytpTMPi-IzfWbAlUY/edit) | live — one row per priced incident |
-| Weekly ROI pack | Google Slides | pending — `SLIDES_URL_PENDING` in [`src/config/artifacts.js`](src/config/artifacts.js) |
+| Weekly ROI pack | [Google Slides](https://docs.google.com/presentation/d/1ipbu1IOxCQkOUKKhzdkiNRTikI60kgt5FLm6CO5jA6M/edit) | live — the week of impact rows as the deck the shift lead presents |
 | Backlog | Jira | stub — two authored cards, `ASML-101` and `ASML-102` |
 
-Drop the real Slides URL into that one constant and the rail turns the pending badge into a link.
-Nothing else has to change.
+Both links live in [`src/config/artifacts.js`](src/config/artifacts.js), and `hasLiveUrl` decides per
+artifact whether the rail renders an open link or a stub badge. Jira is the only badge left.
 
 ## Reset demo
 
@@ -122,8 +122,8 @@ agent project is written against, not a mock-up.
 `POST /api/impact/append`, and the badge reports which of three things happened — appended to the
 live Sheet, written to the dev server's local log, or held in the app. It never claims Sheets when
 it did not reach Sheets. **Notify shift**, **Show weekly pack** and **Show backlog stub** close the
-other three; the weekly pack says *pending* because the deck has no URL yet, which is the honest
-state rather than a dead link.
+other three; **Show weekly pack** opens the real Monday deck, and the backlog is the one panel still
+carrying a stub badge, because nobody has filed those tickets yet.
 
 **7. Go back to the lot board** — D07 has moved out of *Needs fix* and into *In spec*, predicted
 yield is 83%, open fails is 2, and $ at risk has dropped by exactly D07's $178,500. The fix mutated

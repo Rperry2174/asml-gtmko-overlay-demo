@@ -6,19 +6,10 @@
  * comes from this file, so re-pricing the story for a different customer is a
  * constant edit rather than a hunt through the views.
  *
- * Nothing here is a secret. The Sheet is a demo sheet, and the only credential
- * in the whole flow lives in the dev server's environment — see
+ * Nothing here is a secret. The Sheet and the deck are demo artifacts, and the
+ * only credential in the whole flow lives in the dev server's environment — see
  * `vite.config.js` and `src/lib/impact-log.js`.
  */
-
-/**
- * The weekly ROI deck does not exist yet.
- *
- * TODO(artifacts): replace with the real Slides URL once the deck has an ID.
- * `hasLiveUrl` is false while this placeholder is in place, so the UI shows the
- * pack as pending instead of rendering a dead link.
- */
-export const SLIDES_URL_PENDING = 'SLIDES_URL_PENDING';
 
 export const ARTIFACTS = {
   sheet: {
@@ -35,7 +26,7 @@ export const ARTIFACTS = {
     id: 'slides',
     label: 'Weekly ROI pack',
     where: 'Google Slides',
-    url: SLIDES_URL_PENDING,
+    url: 'https://docs.google.com/presentation/d/1ipbu1IOxCQkOUKKhzdkiNRTikI60kgt5FLm6CO5jA6M/edit',
     owner: 'teammate — Slides generation',
     note: 'Rolls the week of impact rows into the deck the shift lead presents on Monday.',
   },

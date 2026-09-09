@@ -16,7 +16,7 @@ Hit **Reset demo** in the titlebar before you start.
 | what | where | state |
 | --- | --- | --- |
 | Yield impact log | [Google Sheet](https://docs.google.com/spreadsheets/d/1h0MhoLHz8A76EV7hfalYlFDuodytpTMPi-IzfWbAlUY/edit) | live — one row per priced incident, 14 columns |
-| Weekly ROI pack | Google Slides | **pending.** `SLIDES_URL_PENDING` in `src/config/artifacts.js`; the rail shows it as pending rather than as a dead link |
+| Weekly ROI pack | [Google Slides](https://docs.google.com/presentation/d/1ipbu1IOxCQkOUKKhzdkiNRTikI60kgt5FLm6CO5jA6M/edit) | live — the week's impact rows as Monday's deck; the rail opens it |
 | Backlog | Jira | stub. Two authored cards, `ASML-101` and `ASML-102` |
 
 ## The beats
@@ -84,10 +84,10 @@ Then **Open the impact Sheet ↗** and show the log the row belongs in.
 
 ### 5 · Assigning it — 4 min
 
-**Notify shift** puts it in `#fab2-shift-b`. **Show weekly pack** is where the
-Monday deck goes; today it says pending, because the deck has no URL yet, and
-that is the honest state. **Show backlog stub** shows `ASML-101` and `ASML-102`
-— the recurring themes, waiting on a teammate to file them.
+**Notify shift** puts it in `#fab2-shift-b`. **Show weekly pack** opens the
+Monday deck in a new tab — it is a real link, so know what is on the slide
+before you click it in front of a room. **Show backlog stub** shows `ASML-101`
+and `ASML-102` — the recurring themes, waiting on a teammate to file them.
 
 All five green. Go back to `#/lot`: predicted yield is 83%, open fails is 2, and
 $ at risk dropped by exactly D07's $178,500.
@@ -111,7 +111,7 @@ already in place. None of it needs the app rewritten.
 | piece | what exists today | what owning it means |
 | --- | --- | --- |
 | **Sheets append** | `POST /api/impact/append` in `vite.config.js` forwards to the Sheets `values:append` API when `GOOGLE_SHEETS_ACCESS_TOKEN` is set, and writes `.impact-log.jsonl` when it is not | make the credential real — a service account and a shared sheet — so the badge says `sheets` on stage |
-| **Slides generation** | `SLIDES_URL_PENDING` in `src/config/artifacts.js`; the rail renders the pack as pending | build the weekly deck from the log rows, then drop the URL in that one constant |
+| **Slides generation** | the deck exists and the rail links it from `src/config/artifacts.js`, but the rows are rolled into it by hand — that is `ASML-102` | generate the week's slides from the log rows so the deck fills itself |
 | **Jira tickets** | two authored cards behind **Show backlog stub** | cluster the week's rows into themes and file real tickets |
 | **The two bots** | `agents/lot-incident-owner` and `agents/yield-impact-analyst`, instructions complete, teammate ids placeholdered | run one turn each, read the ids, patch them in with UpdateAgent — each README has the steps |
 | **Cloud Agent PR** | authored card | point it at a real repo so the coding lane opens a real PR |
