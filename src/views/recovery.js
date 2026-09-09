@@ -52,10 +52,11 @@ const TRANSPORT_NOTE = {
  * know anything about recovery state.
  *
  * @param {HTMLElement} host
- * @param {{compact?: boolean}} opts compact drops the detail cards and points
- *   at the full rail instead — it is the version that sits under a factory run
+ * @param {{compact?: boolean, onAction?: () => void}} opts compact drops the
+ *   detail cards and points at the full rail instead — it is the version that
+ *   sits under a factory run. `onAction` lets the host refresh chrome it owns.
  */
-export function mountRecoveryPanel(host, { compact = false } = {}) {
+export function mountRecoveryPanel(host, { compact = false, onAction } = {}) {
   if (!host) return;
   // Which detail cards the presenter has opened. View state, not job state:
   // reopening the rail should not re-expand everything they closed.
@@ -67,12 +68,26 @@ export function mountRecoveryPanel(host, { compact = false } = {}) {
     wire();
   };
 
+  /**
+   * Repaint after a check moves.
+   *
+   * The story strip is deliberately left alone on mount and only re-voiced
+   * here: straight after a factory run the right thing on screen is still
+   * "caught", and it should move on when the presenter works the checklist,
+   * not the moment the panel appears.
+   */
+  const settle = () => {
+    setTldr(COPY.recovery(currentRecovery()));
+    onAction?.();
+    paint();
+  };
+
   const run = async (fn) => {
     busy = true;
     paint();
     await fn();
     busy = false;
-    paint();
+    settle();
   };
 
   function wire() {
@@ -81,25 +96,25 @@ export function mountRecoveryPanel(host, { compact = false } = {}) {
         switch (btn.dataset.recoveryAction) {
           case 'pr':
             openPr();
-            paint();
+            settle();
             break;
           case 'impact':
             run(logImpact);
             break;
           case 'shift':
             notifyShift();
-            paint();
+            settle();
             break;
           case 'weekly':
             showWeeklyPack();
             open.weekly = compact ? false : !open.weekly;
             if (hasLiveUrl(ARTIFACTS.slides)) window.open(ARTIFACTS.slides.url, '_blank', 'noopener');
-            paint();
+            settle();
             break;
           case 'backlog':
             showBacklog();
             open.backlog = compact ? false : !open.backlog;
-            paint();
+            settle();
             break;
         }
       });
@@ -197,7 +212,8 @@ function stepDetail(id, job) {
 /**
  * Beat 3 on screen: the recovery path wakes the intake bot, which peers to the
  * analyst. The lines are the ones the agents are instructed to send, and the
- * payload is the message body — see `agents/*/agent/instructions.md`.
+ * payload is the message body each agent's `instructions.md` is written
+ * against, under `agents/`.
  */
 function botLane(job, compact) {
   const turns = botTurns(job);
@@ -428,18 +444,7 @@ export function renderRecovery(app) {
       </div>
 
       <h2 class="rail__title">Recovery log</h2>
-      <div class="log" id="recovery-log">
-        ${
-          job && job.log.length
-            ? job.log
-                .map(
-                  (e) =>
-                    `<div class="log__line"><span class="log__t">${e.at}</span><span><strong>${e.actor}</strong> ${e.text}</span></div>`,
-                )
-                .join('')
-            : `<div class="log__line"><span>Nothing yet.</span></div>`
-        }
-      </div>
+      <div class="log" id="recovery-log">${logLines(job)}</div>
 
       <div class="rail__block stack" style="margin-top:14px">
         <button class="btn btn--ghost" id="back-lot">← back to lot board</button>
@@ -447,14 +452,33 @@ export function renderRecovery(app) {
     </aside>
   </div>`;
 
-  mountRecoveryPanel(document.getElementById('recovery-panel'));
-  document.getElementById('back-lot').onclick = () => (location.hash = '#/lot');
+  // The rail's own chrome does not live inside the panel, so it has to be
+  // refreshed alongside it every time a check moves.
+  const refreshChrome = () => {
+    setStatus(
+      job ? `recovery · ${job.dieId}` : 'recovery · idle',
+      job
+        ? `${openSteps(job).length} of ${RECOVERY_STEPS.length} open · ${usd(job.costAvoided)} avoided`
+        : '',
+      `${LOT.file} · simulated`,
+    );
+    const log = document.getElementById('recovery-log');
+    if (log) log.innerHTML = logLines(job);
+  };
 
-  setStatus(
-    job ? `recovery · ${job.dieId}` : 'recovery · idle',
-    job ? `${openSteps(job).length} of ${RECOVERY_STEPS.length} open · ${usd(job.costAvoided)} avoided` : '',
-    `${LOT.file} · simulated`,
-  );
+  mountRecoveryPanel(document.getElementById('recovery-panel'), { onAction: refreshChrome });
+  document.getElementById('back-lot').onclick = () => (location.hash = '#/lot');
+  refreshChrome();
+}
+
+function logLines(job) {
+  if (!job || !job.log.length) return `<div class="log__line"><span>Nothing yet.</span></div>`;
+  return job.log
+    .map(
+      (e) =>
+        `<div class="log__line"><span class="log__t">${e.at}</span><span><strong>${e.actor}</strong> ${e.text}</span></div>`,
+    )
+    .join('');
 }
 
 function artifactLink(a) {
