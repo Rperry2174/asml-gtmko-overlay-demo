@@ -73,7 +73,17 @@ export const BOTS = {
 
 let job = null;
 
+/**
+ * The append in flight, if any. Remounting the panel mid-append — the compact
+ * panel's link to the full rail — has to adopt this request rather than fire a
+ * second one: a duplicate row in the Sheet is worse than a slow button.
+ */
+let impactInFlight = null;
+
 export const currentRecovery = () => job;
+
+/** The append in flight, so a fresh mount can wait on it instead of re-firing. */
+export const pendingImpact = () => impactInFlight;
 
 /** Reset demo drops the open incident along with the lot it belonged to. */
 export function resetRecovery() {
@@ -190,10 +200,24 @@ export function openPr() {
  */
 export async function logImpact() {
   if (!job) return null;
-  job.steps.impact = 'pending';
-  job.loggedAt = new Date().toISOString();
+  if (impactInFlight) return impactInFlight;
 
-  const result = await appendImpactRow(job);
+  const incident = job;
+  incident.steps.impact = 'pending';
+  incident.loggedAt = new Date().toISOString();
+
+  let result;
+  impactInFlight = appendImpactRow(incident);
+  try {
+    result = await impactInFlight;
+  } finally {
+    impactInFlight = null;
+  }
+
+  // Reset demo — or a new incident — while the append was out: the row is
+  // written, but the job it belonged to is gone and must not be resurrected.
+  if (job !== incident) return result;
+
   job.transport = result.transport;
   job.detail.impact = result;
   job.steps.impact = 'done';

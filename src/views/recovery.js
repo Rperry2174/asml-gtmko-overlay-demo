@@ -31,6 +31,7 @@ import {
   notifyShift,
   openPr,
   openSteps,
+  pendingImpact,
   showBacklog,
   showWeeklyPack,
 } from '../recovery.js';
@@ -52,10 +53,12 @@ const TRANSPORT_NOTE = {
  * know anything about recovery state.
  *
  * @param {HTMLElement} host
- * @param {{compact?: boolean}} opts compact drops the detail cards and points
- *   at the full rail instead — it is the version that sits under a factory run
+ * @param {{compact?: boolean, onUpdate?: (() => void)|null}} opts compact drops
+ *   the detail cards and points at the full rail instead — it is the version
+ *   that sits under a factory run; onUpdate repaints whatever chrome outside
+ *   the host also reads the job
  */
-export function mountRecoveryPanel(host, { compact = false } = {}) {
+export function mountRecoveryPanel(host, { compact = false, onUpdate = null } = {}) {
   if (!host) return;
   // Which detail cards the presenter has opened. View state, not job state:
   // reopening the rail should not re-expand everything they closed.
@@ -65,6 +68,7 @@ export function mountRecoveryPanel(host, { compact = false } = {}) {
   const paint = () => {
     host.innerHTML = panel({ compact, open, busy });
     wire();
+    onUpdate?.();
   };
 
   const run = async (fn) => {
@@ -106,7 +110,12 @@ export function mountRecoveryPanel(host, { compact = false } = {}) {
     });
   }
 
-  paint();
+  // Mounting while an append is out — the compact panel's link to the full
+  // rail, clicked mid-request — waits on that one instead of leaving the row
+  // stuck on “appending…” or offering the button again.
+  const inFlight = pendingImpact();
+  if (inFlight) run(() => inFlight);
+  else paint();
 }
 
 function panel({ compact, open, busy }) {
@@ -163,7 +172,7 @@ function checkRow(step, job, busy) {
     <button
       class="btn btn--ghost btn--sm"
       data-recovery-action="${step.id}"
-      ${busy || (done && ONE_SHOT.has(step.id)) ? 'disabled' : ''}
+      ${busy || pending || (done && ONE_SHOT.has(step.id)) ? 'disabled' : ''}
     >${done && !ONE_SHOT.has(step.id) ? 'Show again' : step.action}</button>
   </li>`;
 }
@@ -197,7 +206,7 @@ function stepDetail(id, job) {
 /**
  * Beat 3 on screen: the recovery path wakes the intake bot, which peers to the
  * analyst. The lines are the ones the agents are instructed to send, and the
- * payload is the message body — see `agents/*/agent/instructions.md`.
+ * payload is the message body — see `agents/<bot>/agent/instructions.md`.
  */
 function botLane(job, compact) {
   const turns = botTurns(job);
@@ -370,7 +379,6 @@ export function renderRecovery(app) {
   const job = currentRecovery();
   setTabs('recovery');
   setTitleFile(job ? `${LOT.id} · ${job.dieId} · recovery` : `${LOT.id} · recovery`);
-  setTldr(COPY.recovery(job));
 
   app.innerHTML = `
   <div class="workspace">
@@ -415,7 +423,7 @@ export function renderRecovery(app) {
       </div>
       <div class="toolbar">
         <span class="tool tool--active">caught → priced → assigned</span>
-        <span class="tool">${job ? `${openSteps(job).length} open` : 'no incident'}</span>
+        <span class="tool" id="recovery-open"></span>
         <span class="toolbar__spacer">artifacts are shared; the checklist is per incident</span>
       </div>
       <div id="recovery-panel"></div>
@@ -428,18 +436,7 @@ export function renderRecovery(app) {
       </div>
 
       <h2 class="rail__title">Recovery log</h2>
-      <div class="log" id="recovery-log">
-        ${
-          job && job.log.length
-            ? job.log
-                .map(
-                  (e) =>
-                    `<div class="log__line"><span class="log__t">${e.at}</span><span><strong>${e.actor}</strong> ${e.text}</span></div>`,
-                )
-                .join('')
-            : `<div class="log__line"><span>Nothing yet.</span></div>`
-        }
-      </div>
+      <div class="log" id="recovery-log"></div>
 
       <div class="rail__block stack" style="margin-top:14px">
         <button class="btn btn--ghost" id="back-lot">← back to lot board</button>
@@ -447,14 +444,37 @@ export function renderRecovery(app) {
     </aside>
   </div>`;
 
-  mountRecoveryPanel(document.getElementById('recovery-panel'));
-  document.getElementById('back-lot').onclick = () => (location.hash = '#/lot');
+  // Everything outside the panel that reads the job — story strip, open count,
+  // log, status bar — is painted here, so closing a check updates the screen
+  // the presenter is looking at rather than only the checklist on it.
+  const paintChrome = () => {
+    const count = document.getElementById('recovery-open');
+    // An append that lands after the presenter navigated away has no chrome
+    // left to write: the strip and status bar belong to the view now on screen.
+    if (!count) return;
+    const j = currentRecovery();
+    setTldr(COPY.recovery(j));
+    count.textContent = j ? `${openSteps(j).length} open` : 'no incident';
+    document.getElementById('recovery-log').innerHTML = logLines(j);
+    setStatus(
+      j ? `recovery · ${j.dieId}` : 'recovery · idle',
+      j ? `${openSteps(j).length} of ${RECOVERY_STEPS.length} open · ${usd(j.costAvoided)} avoided` : '',
+      `${LOT.file} · simulated`,
+    );
+  };
 
-  setStatus(
-    job ? `recovery · ${job.dieId}` : 'recovery · idle',
-    job ? `${openSteps(job).length} of ${RECOVERY_STEPS.length} open · ${usd(job.costAvoided)} avoided` : '',
-    `${LOT.file} · simulated`,
-  );
+  mountRecoveryPanel(document.getElementById('recovery-panel'), { onUpdate: paintChrome });
+  document.getElementById('back-lot').onclick = () => (location.hash = '#/lot');
+}
+
+function logLines(job) {
+  if (!job || !job.log.length) return `<div class="log__line"><span>Nothing yet.</span></div>`;
+  return job.log
+    .map(
+      (e) =>
+        `<div class="log__line"><span class="log__t">${e.at}</span><span><strong>${e.actor}</strong> ${e.text}</span></div>`,
+    )
+    .join('');
 }
 
 function artifactLink(a) {

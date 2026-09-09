@@ -30,6 +30,7 @@ function impactLogEndpoint() {
         }
 
         const token = process.env.GOOGLE_SHEETS_ACCESS_TOKEN;
+        let why = 'no GOOGLE_SHEETS_ACCESS_TOKEN';
         if (token) {
           try {
             const detail = await appendToSheets({ spreadsheetId, sheetName, values, token });
@@ -37,11 +38,7 @@ function impactLogEndpoint() {
           } catch (err) {
             // A bad token should not take the demo down mid-run: fall through
             // to the local log and tell the UI which one it actually got.
-            return json(res, 200, {
-              ok: true,
-              transport: 'mock',
-              detail: `Sheets append failed (${err.message}) — row written to .impact-log.jsonl`,
-            });
+            why = `Sheets append failed (${err.message})`;
           }
         }
 
@@ -52,12 +49,19 @@ function impactLogEndpoint() {
         return json(res, 200, {
           ok: true,
           transport: 'mock',
-          detail: 'no GOOGLE_SHEETS_ACCESS_TOKEN — row written to .impact-log.jsonl',
+          detail: `${why} — row written to .impact-log.jsonl`,
         });
       });
     },
   };
 }
+
+/**
+ * Shorter than the browser helper's 4s abort in `src/lib/impact-log.js`, on
+ * purpose: a hung Sheets call has to give up here first, or the client reports
+ * `local` while the row is still on its way and a retry appends it twice.
+ */
+const SHEETS_TIMEOUT_MS = 3000;
 
 async function appendToSheets({ spreadsheetId, sheetName, values, token }) {
   const range = encodeURIComponent(`${sheetName || 'Sheet1'}!A:N`);
@@ -68,6 +72,7 @@ async function appendToSheets({ spreadsheetId, sheetName, values, token }) {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
     body: JSON.stringify({ values }),
+    signal: AbortSignal.timeout(SHEETS_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const out = await res.json();
