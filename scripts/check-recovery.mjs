@@ -40,6 +40,9 @@ import {
   showBacklog,
   showWeeklyPack,
 } from '../src/recovery.js';
+// Safe to import outside a browser: COPY is plain data and setTldr only
+// touches the DOM when it is called.
+import { COPY } from '../src/tldr.js';
 
 let passed = 0;
 const check = async (name, fn) => {
@@ -136,10 +139,23 @@ await check('logging impact writes a full row and reports its transport', async 
 
 await check('the incident is not closed until all five are', async () => {
   assert.equal(openSteps().length, 3);
+  const midway = COPY.recovery(currentRecovery());
+  assert.equal(midway.tone, 'warn', 'an open incident must not read as done');
+  assert.match(midway.sub, /3 of 5 still open/);
+
   notifyShift();
   showWeeklyPack();
   showBacklog();
   assert.equal(openSteps().length, 0);
+});
+
+await check('closing the fifth check turns the story strip green', () => {
+  // Tone and words come from the same returned object, so this is the only
+  // thing standing between "all five closed" and a strip still saying amber.
+  const closed = COPY.recovery(currentRecovery());
+  assert.equal(closed.tone, 'ok');
+  assert.match(closed.text, /D07 is closed/);
+  assert.match(closed.text, /\$178,500/);
 });
 
 await check('the Sheet is live, the Slides deck is still a placeholder', () => {
