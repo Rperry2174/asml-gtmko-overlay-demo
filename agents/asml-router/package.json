@@ -1,0 +1,21 @@
+{
+  "name": "asml-router",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Classifies a coding ask and hands it to mistral (simple) or grok-coder (fab science). Deployed Agent — local runtime, not grokbot.",
+  "scripts": {
+    "dev": "agent-sdk dev",
+    "serve": "agent-sdk serve --mode single",
+    "validate": "agent-sdk validate",
+    "info": "agent-sdk info",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cursor/july": "^0.1.102"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "^5.8.0"
+  }
+}
