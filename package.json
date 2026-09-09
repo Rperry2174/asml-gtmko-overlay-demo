@@ -23,7 +23,19 @@
     "weather:dev": "npm --prefix agents/weather-agent run dev",
     "weather:validate": "npm --prefix agents/weather-agent run validate",
     "weather:check": "npm --prefix agents/weather-agent run check",
-    "weather:test": "npm --prefix agents/weather-agent test"
+    "weather:test": "npm --prefix agents/weather-agent test",
+    "router:install": "npm --prefix agents/asml-router install",
+    "router:dev": "npm --prefix agents/asml-router run dev",
+    "router:validate": "npm --prefix agents/asml-router run validate",
+    "router:check": "npm --prefix agents/asml-router run check",
+    "mistral:install": "npm --prefix agents/mistral install",
+    "mistral:dev": "npm --prefix agents/mistral run dev",
+    "mistral:validate": "npm --prefix agents/mistral run validate",
+    "mistral:check": "npm --prefix agents/mistral run check",
+    "grok:install": "npm --prefix agents/grok-coder install",
+    "grok:dev": "npm --prefix agents/grok-coder run dev",
+    "grok:validate": "npm --prefix agents/grok-coder run validate",
+    "grok:check": "npm --prefix agents/grok-coder run check"
   },
   "devDependencies": {
     "vite": "^5.4.10"

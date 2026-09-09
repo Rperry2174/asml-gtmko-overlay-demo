@@ -202,7 +202,7 @@ src/ui.js                health chips, layer rail, status bar
 src/views/               lot.js · die.js · factory.js · recovery.js
 src/styles.css           dark layout-tool theme
 docs/TEAM_WALKTHROUGH.md the 30-minute stage outline and who owns what next
-agents/                  three separate Agent SDK projects — see below
+agents/                  six separate Agent SDK projects, on two tracks — see below
 ```
 
 To change the story, edit `src/data.js` (residuals, which site is the outlier, health per
@@ -229,10 +229,50 @@ tolerable.
 
 ## Agent SDK projects
 
-Three independent projects live under [`agents/`](agents/). None of them is imported by the Vite
-app, `@cursor/july` is **not** a dependency of it, and `npm run dev` is unaffected by all three.
-All three run on the experimental `grokbot` runtime, so a turn executes on Cursor's hosted box and
-needs a Cursor API key.
+Six independent projects live under [`agents/`](agents/). None of them is imported by the Vite app,
+`@cursor/july` is **not** a dependency of it, and `npm run dev` is unaffected by all six.
+
+They are on two tracks, and the split is a runtime split, not a filing convention:
+
+| track | runtime | shows up as | projects |
+| --- | --- | --- | --- |
+| **Coding** | local (the SDK default) | Deployed Agents on cursor.com | `asml-router`, `mistral`, `grok-coder` |
+| **Yield** | `grokbot` | Grok Bots in the Cursor app | `lot-incident-owner`, `yield-impact-analyst` |
+| — | `grokbot` | rehearsal only, never demoed | `weather-agent` |
+
+The runtime decides what a project can carry. `grokbot` turns execute on Cursor's hosted box and
+refuse MCP connections, server tools and authored subagents outright, which is why the yield lane is
+two bots talking through the app's teammate wiring. The coding track takes the default local
+runtime, so the router can hold peer MCP connections and delegate a whole turn to another agent.
+
+### Coding track — Deployed Agents
+
+The hardness argument: not every coding ask is the same size, and the expensive ones are the ones
+where a fast generalist writes something that compiles and is wrong.
+
+| project | role |
+| --- | --- |
+| [`asml-router`](agents/asml-router/README.md) | reads the ask, picks the destination, does not write code |
+| [`mistral`](agents/mistral/README.md) | mock stand-in for the generalist coder ASML already runs — CRUD, renames, boilerplate |
+| [`grok-coder`](agents/grok-coder/README.md) | overlay, metrology, residual fits, yield, units. The one worth paying for |
+
+STEM goes to `grok-coder`; ordinary software work goes to `mistral`; a coin flip goes to
+`grok-coder`, because a wrong number costs more than a slow one. `mistral` is **branded**, not
+integrated — nothing in that package calls Mistral's API.
+
+```bash
+npm run router:install  && npm run router:validate
+npm run mistral:install && npm run mistral:validate
+npm run grok:install    && npm run grok:validate
+```
+
+Each also carries `dev` and `check`. The router only routes when it can reach both peers — one serve
+process holding all three, or three processes wired by URL.
+[Its README](agents/asml-router/README.md#run-the-trio) has both, and the deployment wiring, and why
+`serve --dir agents` is not the command: the published `@cursor/july` refuses the `grokbot` projects
+sitting next to them.
+
+### Yield track — Grok Bots
 
 | project | role |
 | --- | --- |
@@ -246,7 +286,7 @@ npm run impact:install   && npm run impact:validate
 ```
 
 `incident:*` and `impact:*` also carry `dev`, `check` and `test`, the same way `weather:*` does.
-`validate`, `check` and `test` need no key and no network.
+`validate`, `check` and `test` need no key and no network across both tracks.
 
 Teammate ids are placeholders (`YIELD_IMPACT_ANALYST_ID`, `LOT_INCIDENT_OWNER_ID`) because Grok Bot
 ids are assigned by the backend on a bot's first turn. Each README has the UpdateAgent steps for
@@ -257,7 +297,8 @@ patching the real ids in once both bots have run.
 [`agents/weather-agent`](agents/weather-agent/README.md) reads a forecast for a city and decides
 whether an outdoor plan holds or moves. It has **nothing to do with the ASML story** — it exists
 only to rehearse a real Agent SDK turn before the hackathon, and it must not appear in a customer
-deck, a demo, or any copy a customer reads. The two agents above are the ones on the lane.
+deck, a demo, or any copy a customer reads. `lot-incident-owner` and `yield-impact-analyst` are the
+ones on the lane, and the coding track does not touch weather at all.
 
 Like them it runs on the experimental `grokbot` runtime, so the turn executes on Cursor's hosted
 Grok Bot box rather than locally. That means it needs credentials for every command that opens a
