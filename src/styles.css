@@ -6,7 +6,6 @@
 :root {
   --bg: #0e1217;
   --bg-canvas: #0a0d11;
-  --rail: #151a21;
   --panel: #111620;
   --panel-2: #161c26;
   --line: #232c38;
@@ -221,38 +220,51 @@ body {
   overflow: hidden;
 }
 
-.workspace {
-  display: grid;
-  grid-template-columns: 186px minmax(0, 1fr) 292px;
+/* One surface, full width, one scrollbar. No rails: an operator gets the
+   whole window for the thing being inspected, and the supporting numbers sit
+   under it as tiles rather than beside it as chrome. */
+.stage {
   height: 100%;
   min-height: 0;
-}
-
-.workspace--factory {
-  grid-template-columns: 266px minmax(0, 1fr) 312px;
-}
-
-.rail {
-  background: var(--rail);
-  border-right: 1px solid var(--line);
-  padding: 12px 12px 20px;
   overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.rail--right {
-  border-right: 0;
-  border-left: 1px solid var(--line);
-}
-
-.canvas {
   background: var(--bg-canvas);
-  padding: 12px 14px 18px;
-  overflow-y: auto;
+  padding: 12px 20px 26px;
+}
+
+.stage > * + * {
+  margin-top: 12px;
+}
+
+/* -------------------------------------------------------------- tiles */
+
+/* The supporting detail: die facts, residual tables, the cost model, logs.
+   Wraps to the window instead of being pinned to a fixed-width column. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.tile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 11px 13px 13px;
   min-width: 0;
 }
 
-.rail__title {
+.tile--wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+  .tile--wide {
+    grid-column: auto;
+  }
+}
+
+.tile__title {
   margin: 0 0 8px;
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -260,46 +272,22 @@ body {
   color: var(--text-faint);
 }
 
-.rail__title + .rail__title,
-.rail__block + .rail__title {
+.tile__title + .tile__title,
+.tile__block + .tile__title {
   margin-top: 18px;
 }
 
-/* ------------------------------------------------------- layer list rail */
-
-.layer {
+/* A row of things to press, sized to their labels. */
+.actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 0;
-  color: var(--text-dim);
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.layer__swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  flex: 0 0 auto;
-}
-
-.layer__num {
-  width: 18px;
-  color: var(--text-faint);
-  text-align: right;
-}
-
-.check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 0;
-  color: var(--text-dim);
-  cursor: default;
-}
-
-.check input {
-  accent-color: var(--cyan);
+.actions .btn {
+  width: auto;
+  min-width: 190px;
 }
 
 .kv {
@@ -695,6 +683,36 @@ button.tool:hover {
   color: var(--text-faint);
   font-size: 10.5px;
   margin-top: 4px;
+}
+
+/* Lot facts — what used to be a rail of key/values, now one line under the
+   numbers they describe. */
+.factbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.fact__k {
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fact__v {
+  color: var(--text);
+  overflow-wrap: anywhere;
 }
 
 /* Board controls: sort, not summary. Small, outlined, clearly interactive. */
@@ -1272,6 +1290,38 @@ a.btn {
   padding: 0;
 }
 
+/* The pipeline reads across the top of the run instead of down a rail, so the
+   plane underneath it gets the full width. */
+.steps--row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 12px 6px;
+}
+
+.steps--row .step {
+  border-bottom: 0;
+  min-width: 0;
+}
+
+.steps--row .step + .step {
+  border-left: 1px solid var(--line-soft);
+  padding-left: 12px;
+}
+
+@media (max-width: 1000px) {
+  .steps--row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .steps--row .step + .step {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
 .step {
   display: flex;
   gap: 9px;
@@ -1589,6 +1639,8 @@ a.btn {
   grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
   align-items: stretch;
   gap: 8px;
+  /* Two cards and an arrow; on a wide screen they should stay cards. */
+  max-width: 1080px;
 }
 
 .lane__arrow {
@@ -1867,12 +1919,9 @@ a.btn {
   margin-top: 8px;
 }
 
+/* Broken over ideal instead of beside it, rather than two squeezed plots. */
 @media (max-width: 1180px) {
   .panels {
-    grid-template-columns: 1fr;
-  }
-  .workspace,
-  .workspace--factory {
-    grid-template-columns: 160px minmax(0, 1fr) 260px;
+    grid-template-columns: minmax(0, 1fr);
   }
 }

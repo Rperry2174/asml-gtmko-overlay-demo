@@ -13,7 +13,7 @@
  * `src/views/recovery.js`.
  */
 
-import { ARTIFACTS, COST_MODEL, usd } from './config/artifacts.js';
+import { ARTIFACTS, COST_MODEL, qty, usd } from './config/artifacts.js';
 import { LOT, dieCostAvoided } from './data.js';
 import { appendImpactRow } from './lib/impact-log.js';
 
@@ -118,6 +118,10 @@ export function openRecovery({ die, siteId, residualBefore, residualAfter = null
     residualBefore,
     residualAfter,
     wafersAtRisk: die.wafersAtRisk,
+    // Kept alongside the count so the rail can show where the count came from
+    // rather than asserting it. The handoff payload is unchanged: the bots are
+    // briefed on `wafers_at_risk` and must not re-derive it.
+    driftHours: die.driftHours,
     costAvoided: dieCostAvoided(die),
     caughtBy,
     owner: BOTS.owner.name,
@@ -140,7 +144,7 @@ export function openRecovery({ die, siteId, residualBefore, residualAfter = null
   );
   note(
     BOTS.owner.name,
-    `Handing ${job.dieId}/${job.siteId} to ${BOTS.analyst.name}: ${job.wafersAtRisk} wafers at risk, price it.`,
+    `Handing ${job.dieId}/${job.siteId} to ${BOTS.analyst.name}: ${qty(job.wafersAtRisk)} wafers at risk, price it.`,
     { to: BOTS.analyst.name, payload: incidentPayload(job) },
   );
   return job;
@@ -240,7 +244,7 @@ export async function logImpact() {
 
   note(
     BOTS.analyst.name,
-    `${job.dieId}/${job.siteId}: ${job.wafersAtRisk} wafers × ${usd(COST_MODEL.costPerWaferUsd)} × ${COST_MODEL.escapeProbIfMissed} = ${usd(job.costAvoided)} avoided.`,
+    `${job.dieId}/${job.siteId}: ${qty(job.wafersAtRisk)} wafers × ${usd(COST_MODEL.costPerWaferUsd)} × ${COST_MODEL.escapeProbIfMissed} = ${usd(job.costAvoided)} avoided.`,
     { to: 'user' },
   );
   note(BOTS.analyst.name, `Impact log: ${result.detail}.`, { to: ARTIFACTS.sheet.label });

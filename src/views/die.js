@@ -3,10 +3,12 @@
  * inspector that argues for the local fit over the global one.
  */
 
+import { qty, usd } from '../config/artifacts.js';
 import {
   LOT,
   SPEC_NM,
   crudeGlobalFit,
+  dieCostAvoided,
   dieStatus,
   getDie,
   health,
@@ -19,7 +21,7 @@ import {
 import { layoutPanel, planeCoords } from '../layout-svg.js';
 import { CAUGHT_BY, openRecovery, submitRecipeChange } from '../recovery.js';
 import { COPY, setTldr } from '../tldr.js';
-import { healthChips, kv, layerRail, setStatus, setTabs, setTitleFile } from '../ui.js';
+import { healthChips, kv, setStatus, setTabs, setTitleFile } from '../ui.js';
 
 const resTone = (r) => (r > 8 ? 'fail' : r > SPEC_NM ? 'warn' : 'ok');
 
@@ -39,36 +41,22 @@ export function renderDie(app, dieId) {
   tellStory(die);
 
   app.innerHTML = `
-  <div class="workspace">
-    <aside class="rail">
-      ${layerRail()}
-      <h2 class="rail__title">Die</h2>
-      <div class="rail__block">
-        ${kv('id', die.id)}
-        ${kv('position', `r${die.row} c${die.col}`)}
-        ${kv('layers', LOT.layerPair)}
-        ${kv('sites', '4')}
-      </div>
-      <h2 class="rail__title">Health</h2>
-      <div class="rail__block">${healthChips(health(die))}</div>
-    </aside>
-
-    <section class="canvas">
-      <div class="crumb"><a href="#/lot">← lot board</a><span>/</span><span>${die.id}</span></div>
-      <div class="toolbar">
-        <span class="tool">xy µm</span>
-        <span class="tool">zoom 1:1</span>
-        <span class="tool tool--active">fit residual</span>
-        <span class="tool ${status === 'ok' ? '' : 'tool--alert'}">${
-          status === 'ok' ? 'all sites in spec' : `site ${worst.id} outlier`
-        }</span>
-        <span class="toolbar__spacer">compare: golden vs measured</span>
-      </div>
-      <div class="panels" id="panels"></div>
-      <p class="section-note" id="gain-note"></p>
-    </section>
-
-    <aside class="rail rail--right" id="inspector"></aside>
+  <div class="stage">
+    <div class="crumb"><a href="#/lot">← lot board</a><span>/</span><span>${die.id}</span></div>
+    <div class="toolbar">
+      <span class="tool">xy µm</span>
+      <span class="tool">zoom 1:1</span>
+      <span class="tool tool--active">fit residual</span>
+      <span class="tool ${status === 'ok' ? '' : 'tool--alert'}">${
+        status === 'ok' ? 'all sites in spec' : `site ${worst.id} outlier`
+      }</span>
+      <span class="toolbar__spacer">compare: measured (left) vs golden (right)</span>
+    </div>
+    <div class="panels" id="panels"></div>
+    <p class="section-note" id="gain-note"></p>
+    <div id="die-note"></div>
+    <div class="actions" id="actions"></div>
+    <div class="tiles" id="inspector"></div>
   </div>`;
 
   paint();
@@ -79,16 +67,10 @@ export function renderDie(app, dieId) {
     const maxNow = state.preview ? crude.maxAfter : maxResidual(die);
     if (!state.preview) withTheta(die, rs);
 
+    // Broken on the left, ideal on the right. The miss is what the view is
+    // for, so it takes the position the eye starts from, and design intent
+    // sits beside it as the reference — not the other way round.
     document.getElementById('panels').innerHTML =
-      layoutPanel({
-        mode: 'golden',
-        residuals: residualsFor(die, 'golden'),
-        badge: 'GOLDEN · residual < 1 nm',
-        tone: 'ok',
-        specNm: SPEC_NM,
-        panelId: 'golden',
-        footnote: 'design intent',
-      }) +
       layoutPanel({
         mode: 'measured',
         residuals: rs,
@@ -99,12 +81,23 @@ export function renderDie(app, dieId) {
         selected: die.outlier ?? worst.id,
         specNm: SPEC_NM,
         panelId: 'measured',
-        footnote: state.preview ? 'what a weak model does' : 'after exposure',
+        footnote: state.preview ? 'what a weak model does' : 'what printed',
+      }) +
+      layoutPanel({
+        mode: 'golden',
+        residuals: residualsFor(die, 'golden'),
+        badge: 'GOLDEN · residual < 1 nm',
+        tone: 'ok',
+        specNm: SPEC_NM,
+        panelId: 'golden',
+        footnote: 'design intent',
       });
 
     document.getElementById('gain-note').textContent =
       `Mark offsets are drawn ×100 so a nanometre-scale miss is visible on a 40 µm plane. Residual numbers are real.`;
 
+    document.getElementById('die-note').innerHTML = dieNote(die, state, crude);
+    document.getElementById('actions').innerHTML = actions(die, state);
     document.getElementById('inspector').innerHTML = inspector(die, state, crude);
     wire();
   }
@@ -168,40 +161,77 @@ function tellStory(die) {
 
 /* ---------------------------------------------------------------- panels */
 
+/** The row of things to press. Buttons only — state is said above it. */
+function actions(die, state) {
+  const canFix = maxResidual(die) > SPEC_NM;
+  return `
+    ${
+      canFix
+        ? `<button class="btn" id="run-fix">Run fix on this die →</button>
+           <button class="btn btn--ghost" id="submit-recipe-change">Submit recipe change</button>`
+        : ''
+    }
+    <button class="btn btn--ghost" id="toggle-crude">
+      ${state.preview ? 'Back to measured' : 'Preview the crude fit (T only)'}
+    </button>`;
+}
+
+/**
+ * Where the die stands, in one line directly under the plane that shows it —
+ * either what the crude fit just did, or why there is nothing to press.
+ */
+function dieNote(die, state, crude) {
+  if (state.preview) {
+    const worst = worstSite(die);
+    return `<div class="banner banner--warn">
+      One global shift of ${nm(crude.T.dx)}, ${nm(crude.T.dy)} nm.
+      Site ${die.outlier ?? worst.id} barely improves and ${collateral(crude)}.
+      This is the correction the fix is arguing against.
+    </div>`;
+  }
+  if (maxResidual(die) > SPEC_NM) return '';
+  return `<div class="banner banner--ok">${
+    die.fixed
+      ? `Fixed. Site ${Object.keys(die.knobs.local)[0]} is back inside spec and the good sites never moved.`
+      : 'Nothing to correct on this die.'
+  }</div>`;
+}
+
 function inspector(die, state, crude) {
   const fit = localFit(die);
   const rs = residualsFor(die, state.preview ? 'crude' : 'measured');
   const maxNow = state.preview ? crude.maxAfter : maxResidual(die);
   const worst = rs.reduce((w, s) => (s.r > w.r ? s : w));
-  const canFix = maxResidual(die) > SPEC_NM;
 
   return `
-    <h2 class="rail__title">Overlay fit</h2>
-    <div class="insp__big insp__big--${resTone(maxNow)}">${maxNow.toFixed(1)} nm</div>
-    <div class="insp__caption">
-      ${
-        state.preview
-          ? `after a global-T fit — ${crude.broken.length} good site${crude.broken.length === 1 ? '' : 's'} pushed out of spec`
-          : maxNow > SPEC_NM
-            ? `max residual @ site ${worst.id}`
-            : 'every site inside spec'
-      }
+    <div class="tile">
+      <h2 class="tile__title">Overlay fit</h2>
+      <div class="insp__big insp__big--${resTone(maxNow)}">${maxNow.toFixed(1)} nm</div>
+      <div class="insp__caption">
+        ${
+          state.preview
+            ? `after a global-T fit — ${crude.broken.length} good site${crude.broken.length === 1 ? '' : 's'} pushed out of spec`
+            : maxNow > SPEC_NM
+              ? `max residual @ site ${worst.id}`
+              : 'every site inside spec'
+        }
+      </div>
+      <h2 class="tile__title">Per-site residuals</h2>
+      <div class="tile__block">
+        ${rs
+          .map(
+            (s) => `<div class="res-row">
+              <span class="res-row__id">${s.id} ${siteLabel(die, s.id)}</span>
+              <span class="res-row__v res-row__v--${resTone(s.r)}">${s.r.toFixed(1)} nm</span>
+            </div>`,
+          )
+          .join('')}
+      </div>
     </div>
 
-    <h2 class="rail__title">Per-site residuals</h2>
-    <div class="rail__block">
-      ${rs
-        .map(
-          (s) => `<div class="res-row">
-            <span class="res-row__id">${s.id} ${siteLabel(die, s.id)}</span>
-            <span class="res-row__v res-row__v--${resTone(s.r)}">${s.r.toFixed(1)} nm</span>
-          </div>`,
-        )
-        .join('')}
-    </div>
-
-    <h2 class="rail__title">Model picked</h2>
-    <div class="model"><span class="m-eq">r(x,y) = T + R·[x y]ᵀ</span>
+    <div class="tile">
+      <h2 class="tile__title">Model picked</h2>
+      <div class="model"><span class="m-eq">r(x,y) = T + R·[x y]ᵀ</span>
 
 <span class="m-bad">// crude: T only → breaks ${crude.broken.join(', ') || 'the good sites'}</span>
 <span class="m-good">// better: T + local R @ ${fit.siteId}</span>
@@ -209,39 +239,37 @@ function inspector(die, state, crude) {
 θ_${fit.siteId}  = ${nm(fit.error.theta, 2)}°
 Δx_${fit.siteId} = ${nm(fit.error.dx)} nm
 Δy_${fit.siteId} = ${nm(fit.error.dy)} nm</div>
-
-    <div class="rail__block prose" style="margin-top:10px">
-      <p>The math lives on the plane. The question is not <em>how far do we slide the stamp</em> — it is <em>which terms do we fit at all</em>.</p>
-      <p>Fit one global translation and you drag the three good marks off target to chase the bad one. Fit locally and only the site that moved moves.</p>
+      <div class="tile__block prose" style="margin-top:10px">
+        <p>The question is not <em>how far do we slide the stamp</em> — it is <em>which terms to fit at all</em>. Fit one global translation and the three good marks get dragged off target to chase the bad one. Fit locally and only the site that moved moves.</p>
+      </div>
     </div>
 
-    <div class="rail__block stack" style="margin-top:14px">
-      ${
-        canFix
-          ? `<button class="btn" id="run-fix">Run fix on this die →</button>
-             <button class="btn btn--ghost" id="submit-recipe-change">Submit recipe change</button>`
-          : `<div class="banner banner--ok">${
-              die.fixed
-                ? 'Fixed. Site ' +
-                  Object.keys(die.knobs.local)[0] +
-                  ' is back inside spec and the good sites never moved.'
-                : 'Nothing to correct on this die.'
-            }</div>`
-      }
-      <button class="btn btn--ghost" id="toggle-crude">
-        ${state.preview ? 'Back to measured' : 'Preview the crude fit (T only)'}
-      </button>
+    <div class="tile">
+      <h2 class="tile__title">Die</h2>
+      <div class="tile__block">
+        ${kv('id', die.id)}
+        ${kv('position', `r${die.row} c${die.col}`)}
+        ${kv('layers', LOT.layerPair)}
+        ${kv('sites', String(die.sites.length))}
+        ${kv('spec', `${SPEC_NM.toFixed(1)} nm`)}
+      </div>
+      <h2 class="tile__title">Health</h2>
+      <div class="tile__block">${healthChips(health(die))}</div>
     </div>
 
-    ${
-      state.preview
-        ? `<div class="banner banner--warn" style="margin-top:10px">
-            One global shift of ${nm(crude.T.dx)}, ${nm(crude.T.dy)} nm.
-            Site ${die.outlier ?? worst.id} barely improves and ${collateral(crude)}.
-            This is the correction we are arguing against.
-          </div>`
-        : ''
-    }`;
+    <div class="tile">
+      <h2 class="tile__title">What rides on it</h2>
+      <div class="tile__block">
+        ${kv('drift window', `${die.driftHours.toFixed(1)} h`)}
+        ${kv('tool', `${LOT.tool} · ${LOT.throughputWph} wph`)}
+        ${kv('wafers at risk', qty(die.wafersAtRisk))}
+        ${kv(die.fixed ? 'avoided' : 'at risk', usd(dieCostAvoided(die)))}
+      </div>
+      <p class="section-note">
+        ${qty(die.wafersAtRisk)} wafers is the drift window at the tool's published throughput.
+        Priced at an estimated wafer value — see <code>docs/COST_MODEL.md</code>.
+      </p>
+    </div>`;
 }
 
 /** What the crude fit costs the sites that were already inside spec. */

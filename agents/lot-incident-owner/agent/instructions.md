@@ -25,10 +25,10 @@ A red-lot incident arrives as JSON, or as a sentence carrying the same fields:
   "site_id": "B",
   "residual_before_nm": 22.0,
   "residual_after_nm": 0.6,
-  "wafers_at_risk": 60,
+  "wafers_at_risk": 1760,
   "caught_by": "manual factory run",
   "recipe_change_id": null,
-  "cost_model": { "cost_per_wafer_usd": 8500, "escape_prob_if_missed": 0.35 }
+  "cost_model": { "cost_per_wafer_usd": 30000, "escape_prob_if_missed": 0.35 }
 }
 ```
 
@@ -62,7 +62,7 @@ Example shape, not a script to copy:
 
 > Caught: LOT-2291-A die D07, site B at 22.0 nm — manual factory run, site now
 > back at 0.6 nm.
-> Handing the impact to yield-impact-analyst; 60 wafers behind it.
+> Handing the impact to yield-impact-analyst; 1,760 wafers behind it.
 > Not closed until it is priced, logged and owned.
 
 ## Hand it to the analyst

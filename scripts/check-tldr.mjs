@@ -27,7 +27,8 @@ console.log('status strip claims:');
 
 const die = (over = {}) => ({
   id: 'D07',
-  wafersAtRisk: 60,
+  wafersAtRisk: 1760,
+  driftHours: 8.0,
   sites: [{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }],
   knobs: { local: { B: {} } },
   fixed: false,
@@ -36,7 +37,7 @@ const die = (over = {}) => ({
 
 const job = (state) => ({
   dieId: 'D07',
-  costAvoided: 178500,
+  costAvoided: 18_480_000,
   steps: Object.fromEntries(
     ['recipe', 'impact', 'shift', 'weekly', 'backlog'].map((s) => [s, state]),
   ),
@@ -51,7 +52,7 @@ const STATES = {
     yield: 75,
     total: 12,
     fixedCount: 0,
-    dollarsAtRisk: 303450,
+    dollarsAtRisk: 31_185_000,
   }),
   'lot · watching': COPY.lot({
     openFails: 0,
@@ -69,7 +70,7 @@ const STATES = {
     yield: 92,
     total: 12,
     fixedCount: 2,
-    dollarsAtRisk: 53550,
+    dollarsAtRisk: 4_620_000,
   }),
   'lot · clean': COPY.lot({
     openFails: 0,
@@ -85,7 +86,7 @@ const STATES = {
   'die · fixed': COPY.dieOk(die({ fixed: true })),
   'die · clean': COPY.dieOk(die()),
   'factory · running': COPY.factory('B'),
-  'factory · done': COPY.factoryDone('B', 22.0, 0.6, 178500),
+  'factory · done': COPY.factoryDone('B', 22.0, 0.6, 18_480_000),
   'recovery · idle': COPY.recovery(null),
   'recovery · open': COPY.recovery(job('todo')),
   'recovery · closed': COPY.recovery(job('done')),
@@ -141,13 +142,19 @@ check('the lot line only calls the lot clean when nothing is still watching', ()
 
 check('money on screen is the same figure the surface underneath it prints', () => {
   // The lot total rounds with the health band it sits above; a single die does
-  // not, because $178,500 is what the card, the rail and the Sheet all carry.
-  assert.match(STATES['lot · fails'].text, /\$303k at risk/);
-  assert.match(STATES['die · fail'].text, /\$178,500 at risk/);
-  assert.match(STATES['die · fixed'].text, /\$178,500 avoided/);
-  assert.match(STATES['factory · done'].text, /\$178,500 avoided/);
-  assert.match(STATES['recovery · open'].text, /\$178,500/);
-  assert.match(STATES['recovery · closed'].text, /\$178,500 in the impact log/);
+  // not, because $18,480,000 is what the card, the rail and the Sheet carry.
+  assert.match(STATES['lot · fails'].text, /\$31\.2M at risk/);
+  assert.match(STATES['lot · one fail'].text, /\$4\.6M at risk/);
+  assert.match(STATES['die · fail'].text, /\$18,480,000 at risk/);
+  assert.match(STATES['die · fixed'].text, /\$18,480,000 avoided/);
+  assert.match(STATES['factory · done'].text, /\$18,480,000 avoided/);
+  assert.match(STATES['recovery · open'].text, /\$18,480,000/);
+  assert.match(STATES['recovery · closed'].text, /\$18,480,000 in the impact log/);
+});
+
+check('the wafer count behind a die is readable at four digits', () => {
+  // "1760 wafers" reads as a part number; the comma is the whole point.
+  assert.match(STATES['die · fail'].sub, /^1,760 wafers behind this die\b/);
 });
 
 console.log(`\n${passed} claims hold.`);

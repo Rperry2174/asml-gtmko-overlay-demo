@@ -1,4 +1,4 @@
-/** Shared chrome: health chips, the layer rail, titlebar tabs, status bar. */
+/** Shared bits: health chips, key/value rows, titlebar tabs, status bar. */
 
 export const STATUS_WORD = { ok: 'ok', warn: 'watch', fail: 'fail' };
 
@@ -15,37 +15,13 @@ export function healthChips(h) {
   </div>`;
 }
 
-const LAYERS = [
-  { n: 1, name: 'diff', color: '#2f7a4f' },
-  { n: 2, name: 'poly', color: '#6a4bab' },
-  { n: 31, name: 'metal1', color: '#21b5f0' },
-  { n: 32, name: 'metal2', color: '#ef9a1f' },
-  { n: 40, name: 'via', color: '#cfe8f5' },
-  { n: 99, name: 'overlay err', color: '#ff5252' },
-];
-
-export function layerRail() {
-  return `
-    <h2 class="rail__title">Layers</h2>
-    <div class="rail__block">
-      ${LAYERS.map(
-        (l) => `<div class="layer">
-          <span class="layer__swatch" style="background:${l.color}"></span>
-          <span class="layer__num">${l.n}</span>
-          <span>${l.name}</span>
-        </div>`,
-      ).join('')}
-    </div>
-    <h2 class="rail__title">Display</h2>
-    <div class="rail__block">
-      <label class="check"><input type="checkbox" checked disabled /> grid 5 µm</label>
-      <label class="check"><input type="checkbox" checked disabled /> rulers</label>
-      <label class="check"><input type="checkbox" checked disabled /> markers</label>
-    </div>`;
-}
-
 export function kv(k, v) {
   return `<div class="kv"><span>${k}</span><span class="kv__v">${v}</span></div>`;
+}
+
+/** One fact on a horizontal bar, for the facts a view used to rail down a side. */
+export function fact(k, v) {
+  return `<div class="fact"><span class="fact__k">${k}</span><span class="fact__v">${v}</span></div>`;
 }
 
 export function setTabs(view) {

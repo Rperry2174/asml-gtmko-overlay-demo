@@ -2,7 +2,8 @@
 
 Beats only. This is the running order and who owns what, not a script. The
 words live in the app (`src/tldr.js`); the numbers live in `src/data.js` and
-`src/config/artifacts.js`.
+`src/config/artifacts.js`, and where each one came from is in
+[`COST_MODEL.md`](COST_MODEL.md).
 
 One sentence holds the whole thing together: **caught → priced → assigned.**
 Catching a bad die is the part that already half works. Pricing it and putting a
@@ -24,19 +25,25 @@ Hit **Reset demo** in the titlebar before you start.
 ### 1 · The board, and the money on it — 4 min
 
 `#/lot`. Twelve dies, three failing. The health band carries four numbers:
-**75% predicted yield, 22.0 nm max residual, 3 open fails, $303k at risk.**
+**75% predicted yield, 22.0 nm max residual, 3 open fails, $31.2M at risk.**
 
-The fourth is the new one. It is `wafers_at_risk × $8,500 × 0.35` summed over
+The fourth is the new one. It is `wafers_at_risk × $30,000 × 0.35` summed over
 the open fails, and it is on screen before anybody asks "what does that cost?".
 Watch items are deliberately not priced into it — pricing a die nobody is going
 to touch inflates the headline.
 
-Fails come first on the board. D07 is on top with 22 nm and $178,500 on it.
+Fails come first on the board. D07 is on top with 22 nm and $18,480,000 on it.
+
+If the number is challenged, the answer is on the same screen: 1,760 wafers is
+an eight-hour drift window at the NXE:3800E's published 220 wafers an hour, and
+$30,000 is a reported 2 nm-class wafer price, not an ASML figure.
+[`docs/COST_MODEL.md`](COST_MODEL.md) has every source and every assumption, so
+do not improvise a defence of a number that already has one.
 
 ### 2 · The catch — 6 min
 
-Open **D07**. Golden left, measured right. A, C and D landed inside 1 nm; B is
-22 nm out.
+Open **D07**. Measured left — what printed — golden right, the design intent it
+should have matched. A, C and D landed inside 1 nm; B is 22 nm out.
 
 **Preview the crude fit (T only)** is the argument: fit one global translation
 and B barely improves while the three good sites get dragged out of spec. A
@@ -79,7 +86,7 @@ the agent project is written against, not a mock-up.
 Press **Log impact**. The analyst's line appears with the arithmetic:
 
 ```
-60 wafers × $8,500 × 0.35 = $178,500 avoided
+1,760 wafers × $30,000 × 0.35 = $18,480,000 avoided
 ```
 
 The row it writes has 14 columns and shows on screen. The append is a real
@@ -97,17 +104,22 @@ before you click it in front of a room. **Show backlog stub** shows `ASML-101`
 and `ASML-102` — the recurring themes, waiting on a teammate to file them.
 
 All five green. Go back to `#/lot`: predicted yield is 83%, open fails is 2, and
-$ at risk dropped by exactly D07's $178,500.
+$ at risk dropped by exactly D07's $18,480,000 — $31.2M to $12.7M.
 
 ### 6 · What is real — 3 min
 
 Real: the geometry, the residual arithmetic, the two competing model fits, the
 cost formula, the state changes, and the append call.
 
-Not real: the numbers are authored, the factory pipeline is a simulation on a
+Not real: the residuals are authored, the factory pipeline is a simulation on a
 timer, the `OCR-4821` correction record is authored, and the two Grok Bots are
 shown as a lane rather than called live from the app. Nothing in the UI claims
 otherwise.
+
+The money is a middle case, and worth saying plainly: the tool throughput is
+ASML's published spec, the wafer price is a reported industry estimate, and the
+escape probability and the drift windows are ours. No ASML internal data is in
+the repo, and no claim is being made about what a real fab loses.
 
 **Reset demo** and hand the laptop on.
 
