@@ -3,8 +3,12 @@
 ASML GTMKO stage demo — lot board, overlay/metrology layout viewer, recovery rail, TLDR strip (HTML/SVG)
 
 A single-page demo a seller can open on a laptop and drive through in about 30 minutes.
-It looks like a chip layout tool (KLayout / Virtuoso vibe: µm rulers, layer stack, manhattan
-metal) and tells one story in three words: **caught → priced → assigned.**
+It looks like a chip layout tool (KLayout / Virtuoso vibe: µm rulers, manhattan metal, a status
+bar) and tells one story in three words: **caught → priced → assigned.**
+
+There are no sidebars. Every view is one full-width surface: the thing being inspected on top, the
+numbers that support it as tiles underneath. Decorative tool chrome — the layer list, the display
+checkboxes — is gone, because on a projector it cost a third of the width and answered nothing.
 
 A die is misaligned at one site. A weak correction would make things worse and a targeted one
 fixes it without touching anything that was already fine — that is the catch. Then the same miss
@@ -199,7 +203,7 @@ src/recovery.js          the five-check incident, the bot handoff, the append
 src/lib/impact-log.js    the append call and its three transports
 src/layout-svg.js        the coordinate plane, reticle geometry and the four marks
 src/tldr.js              status strip copy and tone
-src/ui.js                health chips, layer rail, status bar
+src/ui.js                health chips, key/value rows, titlebar tabs, status bar
 src/views/               lot.js · die.js · factory.js · recovery.js
 src/styles.css           dark layout-tool theme
 docs/TEAM_WALKTHROUGH.md the 30-minute stage outline and who owns what next

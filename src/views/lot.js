@@ -18,7 +18,7 @@ import {
 import { dieThumb } from '../layout-svg.js';
 import { currentRecovery, openSteps } from '../recovery.js';
 import { COPY, setTldr } from '../tldr.js';
-import { healthChips, kv, setStatus, setTabs, setTitleFile } from '../ui.js';
+import { fact, healthChips, setStatus, setTabs, setTitleFile } from '../ui.js';
 
 /** How the board is sorted. Presentation state, so it lives with the view. */
 let sort = 'fails-first';
@@ -162,119 +162,81 @@ export function renderLot(app) {
   const watches = groups.warn;
   const yieldTone = k.openFails > 0 ? 'warn' : 'ok';
   const job = currentRecovery();
+  // The wafer count the money is built from, so the headline can be checked
+  // against the tool's throughput rather than taken on faith.
+  const waferCount = fails.reduce((sum, d) => sum + d.wafersAtRisk, 0);
 
   app.innerHTML = `
-  <div class="workspace">
-    <aside class="rail">
-      <h2 class="rail__title">Lot</h2>
-      <div class="rail__block">
-        ${kv('id', LOT.id)}
-        ${kv('layers', LOT.layerPair)}
-        ${kv('tool', LOT.tool)}
-        ${kv('recipe', LOT.recipe)}
-        ${kv('dies', String(DIES.length))}
-        ${kv('spec', `${SPEC_NM.toFixed(1)} nm`)}
-      </div>
-      <h2 class="rail__title">Health dimensions</h2>
-      <div class="rail__block prose">
-        <p><strong>Lithography</strong> — did the exposure itself print correctly.</p>
-        <p><strong>Overlay</strong> — did this layer land on the one below it.</p>
-        <p><strong>Metrology</strong> — do we trust the measurement.</p>
-        <p><strong>Process</strong> — are the correction knobs current.</p>
-      </div>
-    </aside>
-
-    <section class="canvas">
-      <!-- Lot health: the summary band. Deliberately not shaped like the
-           board controls below it — these are numbers, not filters. -->
-      <section class="lot-health">
-        <header class="lot-health__head">
-          <h2 class="lot-health__title">Lot health · current state</h2>
-          <span class="lot-health__meta">${LOT.id} · ${DIES.length} dies · measured after exposure</span>
-        </header>
-        <div class="lot-health__stats">
-          <div class="stat">
-            <div class="stat__label">Predicted yield</div>
-            <div class="stat__value stat__value--${yieldTone}">${k.yield.toFixed(0)}<span class="stat__unit">%</span></div>
-            <div class="stat__sub">${DIES.length - k.openFails} of ${DIES.length} dies shippable</div>
-          </div>
-          <div class="stat">
-            <div class="stat__label">Max residual</div>
-            <div class="stat__value stat__value--${k.maxResidual > 8 ? 'fail' : k.maxResidual > SPEC_NM ? 'warn' : 'ok'}">${k.maxResidual.toFixed(1)}<span class="stat__unit">nm</span></div>
-            <div class="stat__sub">worst site anywhere in the lot · spec ${SPEC_NM.toFixed(1)} nm</div>
-          </div>
-          <div class="stat">
-            <div class="stat__label">Open fails</div>
-            <div class="stat__value stat__value--${k.openFails ? 'fail' : 'ok'}">${k.openFails}</div>
-            <div class="stat__sub">${k.fixedCount} fixed this session</div>
-          </div>
-          <!-- The catch, in the only unit the room agrees on. Watch items are
-               not priced here: pricing a die nobody will touch inflates it. -->
-          <div class="stat">
-            <div class="stat__label">$ at risk</div>
-            <div class="stat__value stat__value--${k.dollarsAtRisk ? 'fail' : 'ok'}">${usdCompact(k.dollarsAtRisk)}</div>
-            <div class="stat__sub">open fails only · ${usd(k.dollarsAtRisk)} at ${usdCompact(COST_MODEL.costPerWaferUsd)}/wafer × ${COST_MODEL.escapeProbIfMissed} escape</div>
-          </div>
+  <div class="stage">
+    <!-- Lot health: the summary band. Deliberately not shaped like the
+         board controls below it — these are numbers, not filters. -->
+    <section class="lot-health">
+      <header class="lot-health__head">
+        <h2 class="lot-health__title">Lot health · current state</h2>
+        <span class="lot-health__meta">${LOT.id} · ${DIES.length} dies · measured after exposure</span>
+      </header>
+      <div class="lot-health__stats">
+        <div class="stat">
+          <div class="stat__label">Predicted yield</div>
+          <div class="stat__value stat__value--${yieldTone}">${k.yield.toFixed(0)}<span class="stat__unit">%</span></div>
+          <div class="stat__sub">${DIES.length - k.openFails} of ${DIES.length} dies shippable</div>
         </div>
-      </section>
-
-      <div class="board-controls">
-        <span class="board-controls__label">Board order</span>
-        <div class="seg" role="group" aria-label="Board order">
-          <button class="seg__btn ${sort === 'fails-first' ? 'is-on' : ''}" data-sort="fails-first">Fails first</button>
-          <button class="seg__btn ${sort === 'wafer' ? 'is-on' : ''}" data-sort="wafer">Wafer map</button>
+        <div class="stat">
+          <div class="stat__label">Max residual</div>
+          <div class="stat__value stat__value--${k.maxResidual > 8 ? 'fail' : k.maxResidual > SPEC_NM ? 'warn' : 'ok'}">${k.maxResidual.toFixed(1)}<span class="stat__unit">nm</span></div>
+          <div class="stat__sub">worst site anywhere in the lot · spec ${SPEC_NM.toFixed(1)} nm</div>
         </div>
-        <span class="board-controls__hint">click any die to open the layout viewer</span>
+        <div class="stat">
+          <div class="stat__label">Open fails</div>
+          <div class="stat__value stat__value--${k.openFails ? 'fail' : 'ok'}">${k.openFails}</div>
+          <div class="stat__sub">${k.fixedCount} fixed this session</div>
+        </div>
+        <!-- The catch, in the only unit the room agrees on. Watch items are
+             not priced here: pricing a die nobody will touch inflates it. -->
+        <div class="stat">
+          <div class="stat__label">$ at risk</div>
+          <div class="stat__value stat__value--${k.dollarsAtRisk ? 'fail' : 'ok'}">${usdCompact(k.dollarsAtRisk)}</div>
+          <div class="stat__sub">open fails only · ${usd(k.dollarsAtRisk)} at ${usdCompact(COST_MODEL.costPerWaferUsd)}/wafer × ${COST_MODEL.escapeProbIfMissed} escape</div>
+        </div>
       </div>
-
-      <div class="board">${board()}</div>
+      <div class="factbar">
+        ${fact('layers', LOT.layerPair)}
+        ${fact('tool', `${LOT.tool} · ${LOT.throughputWph} wph`)}
+        ${fact('recipe', LOT.recipe)}
+        ${fact('spec', `${SPEC_NM.toFixed(1)} nm`)}
+        ${fact('wafers at risk', `${qty(waferCount)} across ${fails.length} open fail${fails.length === 1 ? '' : 's'}`)}
+      </div>
     </section>
 
-    <aside class="rail rail--right">
-      <h2 class="rail__title">Needs a decision</h2>
-      <div class="rail__block stack">
-        ${
-          fails.length
-            ? fails
-                .map((d) => {
-                  const w = worstSite(d);
-                  return `<div class="banner banner--warn">
-                    <strong>${d.id}</strong> — site ${w.id} ${w.r.toFixed(1)} nm out · ${usd(dieCostAvoided(d))}.
-                    <br /><span class="muted">Open it, fix it by hand or file a recipe change.</span>
-                  </div>`;
-                })
-                .join('')
-            : `<div class="banner banner--ok">Nothing is failing. Every die in the lot is inside spec.</div>`
-        }
-        ${
-          watches.length
-            ? `<div class="banner banner--info">Watching ${watches.map((d) => d.id).join(', ')}. Drifting, not failing — leave the knobs alone for now.</div>`
-            : ''
-        }
-      </div>
+    ${
+      job
+        ? `<div class="banner banner--info">
+            <strong>${job.dieId}</strong> has an open incident — ${usd(job.costAvoided)} priced,
+            ${openSteps(job).length} of 5 checks left.
+            <a href="#/recovery">Open the recovery rail →</a>
+          </div>`
+        : ''
+    }
 
-      <h2 class="rail__title">Recovery</h2>
-      <div class="rail__block stack">
-        ${
-          job
-            ? `<div class="banner banner--info">
-                <strong>${job.dieId}</strong> is open — ${usd(job.costAvoided)} priced, ${openSteps(job).length} of 5 checks left.
-              </div>
-              <a class="btn btn--ghost" href="#/recovery">Open the recovery rail →</a>`
-            : `<div class="banner banner--info">
-                No incident open. Working a die — a fix by hand or a recipe change — starts one.
-              </div>
-              <a class="btn btn--ghost" href="#/recovery">Artifacts and cost model →</a>`
-        }
+    <div class="board-controls">
+      <span class="board-controls__label">Board order</span>
+      <div class="seg" role="group" aria-label="Board order">
+        <button class="seg__btn ${sort === 'fails-first' ? 'is-on' : ''}" data-sort="fails-first">Fails first</button>
+        <button class="seg__btn ${sort === 'wafer' ? 'is-on' : ''}" data-sort="wafer">Wafer map</button>
       </div>
+      <span class="board-controls__hint">click any die to open the layout viewer</span>
+      <a class="btn btn--ghost btn--sm" href="#/recovery">Recovery rail →</a>
+    </div>
 
-      <h2 class="rail__title">Why this matters</h2>
-      <div class="rail__block prose">
-        <p>Every red die here is wafers that ship wrong if nobody catches them.</p>
-        <p>Catching one is the easy part. Pricing it, writing it down and putting a name on it is the part that does not happen today — so the same miss gets re-argued next week.</p>
-        <p class="section-note">v1 demo — simulated data, no live tool or model calls.</p>
-      </div>
-    </aside>
+    <div class="board">${board()}</div>
+
+    <p class="section-note">
+      Health chips, left to right: <strong>Lithography</strong> — did the exposure print correctly.
+      <strong>Overlay</strong> — did this layer land on the one below it.
+      <strong>Metrology</strong> — do we trust the measurement.
+      <strong>Process</strong> — are the correction knobs current.
+      Simulated data; no live tool or model calls.
+    </p>
   </div>`;
 
   setStatus(

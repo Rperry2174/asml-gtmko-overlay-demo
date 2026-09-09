@@ -22,6 +22,7 @@ import {
   nm,
   residuals,
 } from '../data.js';
+import { qty } from '../config/artifacts.js';
 import { layoutPanel, setMarkResidual } from '../layout-svg.js';
 import { CAUGHT_BY, openRecovery } from '../recovery.js';
 import { COPY, setTldr } from '../tldr.js';
@@ -81,74 +82,79 @@ export function renderFactory(app, dieId) {
   setStatus(`factory run · ${die.id}`, 'pipeline idle', `${LOT.file} · simulated`);
 
   app.innerHTML = `
-  <div class="workspace workspace--factory">
-    <aside class="rail">
-      <h2 class="rail__title">Pipeline</h2>
-      <ol class="steps" id="steps">${STEPS.map(stepRow).join('')}</ol>
-      <div class="banner banner--info" style="margin-top:14px">
-        Simulated run. No tool and no model is called in v1 — the state changes are real and the lot board picks them up.
-      </div>
-    </aside>
+  <div class="stage">
+    <div class="crumb">
+      <a href="#/lot">← lot board</a><span>/</span>
+      <a href="#/die/${die.id}">${die.id}</a><span>/</span><span>factory run</span>
+    </div>
+    <div class="toolbar">
+      <span class="tool tool--active">live re-sim</span>
+      <span class="tool">site ${siteId} under correction</span>
+      <span class="toolbar__spacer">watch ${siteId} come home</span>
+    </div>
 
-    <section class="canvas">
-      <div class="crumb">
-        <a href="#/lot">← lot board</a><span>/</span>
-        <a href="#/die/${die.id}">${die.id}</a><span>/</span><span>factory run</span>
+    <!-- The pipeline reads across the top instead of down a rail, so the plane
+         under it gets the whole window. -->
+    <ol class="steps steps--row" id="steps">${STEPS.map(stepRow).join('')}</ol>
+
+    <div class="panels panels--single" id="panels"></div>
+
+    <div class="kpis" style="margin-bottom:0">
+      <div class="kpi">
+        <div class="kpi__label">Before</div>
+        <div class="kpi__value kpi__value--${resTone(worst.r)}">${worst.r.toFixed(1)}<span style="font-size:15px"> nm</span></div>
+        <div class="kpi__sub">max |r| @ site ${siteId}</div>
       </div>
-      <div class="toolbar">
-        <span class="tool tool--active">live re-sim</span>
-        <span class="tool">site ${siteId} under correction</span>
-        <span class="toolbar__spacer">watch ${siteId} come home</span>
+      <div class="kpi">
+        <div class="kpi__label">Now</div>
+        <div class="kpi__value" id="live-res">—</div>
+        <div class="kpi__sub" id="live-sub">waiting for the run</div>
       </div>
-      <div class="panels panels--single" id="panels"></div>
-      <div class="kpis" style="margin-top:12px; grid-template-columns: repeat(3, 1fr)">
-        <div class="kpi">
-          <div class="kpi__label">Before</div>
-          <div class="kpi__value kpi__value--${resTone(worst.r)}">${worst.r.toFixed(1)}<span style="font-size:15px"> nm</span></div>
-          <div class="kpi__sub">max |r| @ site ${siteId}</div>
+      <div class="kpi">
+        <div class="kpi__label">Good sites moved</div>
+        <div class="kpi__value" id="untouched">—</div>
+        <div class="kpi__sub">${before
+          .filter((s) => s.id !== siteId)
+          .map((s) => s.id)
+          .join(', ')} must not move</div>
+      </div>
+    </div>
+
+    <div id="verdict"></div>
+
+    <div class="tiles">
+      <div class="tile tile--wide">
+        <h2 class="tile__title">Process knobs</h2>
+        <table class="knobs" id="knobs"></table>
+        <p class="section-note">Global knobs stay where they are. That is the whole point — the correction is surgical, not a slide of the entire field.</p>
+      </div>
+      <div class="tile tile--wide">
+        <h2 class="tile__title">Run log</h2>
+        <div class="log" id="log"></div>
+        <p class="section-note">
+          Simulated run: no tool and no model is called. The state changes are real and the lot
+          board picks them up.
+        </p>
+      </div>
+      <div class="tile">
+        <h2 class="tile__title">Die</h2>
+        <div class="tile__block">
+          ${kv('id', die.id)}
+          ${kv('site', siteId)}
+          ${kv('spec', `${SPEC_NM.toFixed(1)} nm`)}
+          ${kv('wafers at risk', qty(die.wafersAtRisk))}
         </div>
-        <div class="kpi">
-          <div class="kpi__label">Now</div>
-          <div class="kpi__value" id="live-res">—</div>
-          <div class="kpi__sub" id="live-sub">waiting for the run</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi__label">Good sites moved</div>
-          <div class="kpi__value" id="untouched">—</div>
-          <div class="kpi__sub">${before
-            .filter((s) => s.id !== siteId)
-            .map((s) => s.id)
-            .join(', ')} must not move</div>
-        </div>
       </div>
-      <div class="stack" style="margin-top:12px">
-        <div id="verdict"></div>
-        <!-- Filled once the run passes: the die is green, the incident is not
-             closed. The full rail is one click away at #/recovery. -->
-        <div id="recovery-slot"></div>
-      </div>
-    </section>
+    </div>
 
-    <aside class="rail rail--right">
-      <h2 class="rail__title">Process knobs</h2>
-      <table class="knobs" id="knobs"></table>
-      <p class="section-note">Global knobs stay where they are. That is the whole point — the correction is surgical, not a slide of the entire field.</p>
+    <!-- Filled once the run passes: the die is green, the incident is not
+         closed. Last on the stage so nothing above it reflows mid-run. -->
+    <div id="recovery-slot"></div>
 
-      <h2 class="rail__title">Run log</h2>
-      <div class="log" id="log"></div>
-
-      <div class="rail__block stack" style="margin-top:14px">
-        <button class="btn btn--ghost" id="back-die">← back to ${die.id}</button>
-        <button class="btn btn--ghost" id="back-lot">← back to lot board</button>
-      </div>
-
-      <h2 class="rail__title">Die</h2>
-      <div class="rail__block">
-        ${kv('id', die.id)}
-        ${kv('site', siteId)}
-        ${kv('spec', `${SPEC_NM.toFixed(1)} nm`)}
-      </div>
-    </aside>
+    <div class="actions">
+      <button class="btn btn--ghost" id="back-die">← back to ${die.id}</button>
+      <button class="btn btn--ghost" id="back-lot">← back to lot board</button>
+    </div>
   </div>`;
 
   const shown = before.map((s) => (s.id === siteId ? { ...s, theta: fit.error.theta } : s));

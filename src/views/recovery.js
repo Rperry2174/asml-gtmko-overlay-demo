@@ -17,6 +17,7 @@ import {
   SHEET_COLUMNS,
   TOOL_SPEC,
   hasLiveUrl,
+  perWaferAtRisk,
   qty,
   sheetRow,
   usd,
@@ -379,68 +380,79 @@ export function renderRecovery(app) {
   setTitleFile(job ? `${LOT.id} · ${job.dieId} · recovery` : `${LOT.id} · recovery`);
 
   app.innerHTML = `
-  <div class="workspace">
-    <aside class="rail">
-      <h2 class="rail__title">Incident</h2>
-      <div class="rail__block">
-        ${
-          job
-            ? [
-                kv('lot', job.lotId),
-                kv('die', job.dieId),
-                kv('site', job.siteId),
-                kv('caught by', job.caughtBy),
-                kv('owner', job.owner),
-                kv('wafers', qty(job.wafersAtRisk)),
-                kv('drift window', `${job.driftHours.toFixed(1)} h @ ${TOOL_SPEC.throughputWph} wph`),
-              ].join('')
-            : `<p class="muted">Nothing open.</p>`
-        }
+  <div class="stage">
+    <div class="crumb">
+      <a href="#/lot">← lot board</a><span>/</span>
+      ${job ? `<a href="#/die/${job.dieId}">${job.dieId}</a><span>/</span>` : ''}
+      <span>recovery</span>
+    </div>
+    <div class="toolbar">
+      <span class="tool tool--active">caught → priced → assigned</span>
+      <span class="tool" id="recovery-open"></span>
+      <span class="toolbar__spacer">artifacts are shared; the checklist is per incident</span>
+    </div>
+
+    <div id="recovery-panel"></div>
+
+    <div class="tiles">
+      <div class="tile">
+        <h2 class="tile__title">Incident</h2>
+        <div class="tile__block">
+          ${
+            job
+              ? [
+                  kv('lot', job.lotId),
+                  kv('die', job.dieId),
+                  kv('site', job.siteId),
+                  kv('caught by', job.caughtBy),
+                  kv('owner', job.owner),
+                  kv('wafers', qty(job.wafersAtRisk)),
+                  kv(
+                    'drift window',
+                    `${job.driftHours.toFixed(1)} h @ ${TOOL_SPEC.throughputWph} wph`,
+                  ),
+                ].join('')
+              : `<p class="muted">Nothing open.</p>`
+          }
+        </div>
       </div>
 
-      <h2 class="rail__title">Cost model</h2>
-      <div class="rail__block">
+      <div class="tile">
+        <h2 class="tile__title">Cost model</h2>
         <div class="model"><span class="m-eq">cost_avoided =</span>
   wafers_at_risk
 × cost_per_wafer_usd
 × escape_prob_if_missed</div>
-        ${kv('cost / wafer', usd(COST_MODEL.costPerWaferUsd))}
-        ${kv('escape prob', COST_MODEL.escapeProbIfMissed.toFixed(2))}
-        ${job ? kv('= avoided', usd(job.costAvoided)) : ''}
-      </div>
-      <p class="section-note">
-        Escape probability is the hedge: catching a miss is worth the chance it would have shipped,
-        not a whole wafer.
-      </p>
-    </aside>
-
-    <section class="canvas">
-      <div class="crumb">
-        <a href="#/lot">← lot board</a><span>/</span>
-        ${job ? `<a href="#/die/${job.dieId}">${job.dieId}</a><span>/</span>` : ''}
-        <span>recovery</span>
-      </div>
-      <div class="toolbar">
-        <span class="tool tool--active">caught → priced → assigned</span>
-        <span class="tool" id="recovery-open"></span>
-        <span class="toolbar__spacer">artifacts are shared; the checklist is per incident</span>
-      </div>
-      <div id="recovery-panel"></div>
-    </section>
-
-    <aside class="rail rail--right">
-      <h2 class="rail__title">Artifacts</h2>
-      <div class="rail__block stack">
-        ${Object.values(ARTIFACTS).map(artifactLink).join('')}
+        <div class="tile__block">
+          ${kv('cost / wafer', usd(COST_MODEL.costPerWaferUsd))}
+          ${kv('escape prob', COST_MODEL.escapeProbIfMissed.toFixed(2))}
+          ${kv('per wafer at risk', usd(perWaferAtRisk()))}
+          ${job ? kv('= avoided', usd(job.costAvoided)) : ''}
+        </div>
+        <p class="section-note">
+          The wafer count is the drift window at ${TOOL_SPEC.model}'s published
+          ${TOOL_SPEC.throughputWph} wph. The wafer value is an industry estimate, and escape
+          probability is our own hedge — catching a miss is worth the chance it would have shipped,
+          not a whole wafer. Sources in <code>docs/COST_MODEL.md</code>.
+        </p>
       </div>
 
-      <h2 class="rail__title">Recovery log</h2>
-      <div class="log" id="recovery-log"></div>
-
-      <div class="rail__block stack" style="margin-top:14px">
-        <button class="btn btn--ghost" id="back-lot">← back to lot board</button>
+      <div class="tile tile--wide">
+        <h2 class="tile__title">Artifacts</h2>
+        <div class="tile__block stack">
+          ${Object.values(ARTIFACTS).map(artifactLink).join('')}
+        </div>
       </div>
-    </aside>
+
+      <div class="tile tile--wide">
+        <h2 class="tile__title">Recovery log</h2>
+        <div class="log" id="recovery-log"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn--ghost" id="back-lot">← back to lot board</button>
+    </div>
   </div>`;
 
   // Everything outside the panel that reads the job — story strip, open count,
