@@ -20,10 +20,10 @@ import { appendImpactRow } from './lib/impact-log.js';
 /** The checklist, in the order the shift works it. */
 export const RECOVERY_STEPS = [
   {
-    id: 'pr',
-    label: 'PR',
-    todo: 'No code change linked yet.',
-    action: 'Open PR (simulated)',
+    id: 'recipe',
+    label: 'Recipe change',
+    todo: 'No recipe change filed yet.',
+    action: 'Submit recipe change',
   },
   {
     id: 'impact',
@@ -54,7 +54,7 @@ export const RECOVERY_STEPS = [
 /** Who caught the miss. Ends up in the Sheet's `caught_by` column. */
 export const CAUGHT_BY = {
   manual: 'manual factory run',
-  cloudAgent: 'cloud agent',
+  recipeChange: 'recipe change',
 };
 
 /** The bots on the lane, in handoff order. Ids are assigned by the backend. */
@@ -95,8 +95,8 @@ export function resetRecovery() {
 /**
  * Start (or update) the recovery job for a die.
  *
- * Both entry points land here — the manual factory run and the Cloud Agent
- * coding task — because it is the same incident either way. Re-entering with
+ * Both entry points land here — the manual factory run and the filed recipe
+ * change — because it is the same incident either way. Re-entering with
  * the die already open updates it rather than throwing away a checklist the
  * presenter has already worked through.
  *
@@ -121,7 +121,7 @@ export function openRecovery({ die, siteId, residualBefore, residualAfter = null
     costAvoided: dieCostAvoided(die),
     caughtBy,
     owner: BOTS.owner.name,
-    prUrl: null,
+    recipeChangeId: null,
     loggedAt: null,
     transport: null,
     steps: Object.fromEntries(RECOVERY_STEPS.map((s) => [s.id, 'todo'])),
@@ -157,7 +157,7 @@ export function incidentPayload(j = job) {
     residual_after_nm: j.residualAfter,
     wafers_at_risk: j.wafersAtRisk,
     caught_by: j.caughtBy,
-    pr_url: j.prUrl,
+    recipe_change_id: j.recipeChangeId,
     cost_model: {
       cost_per_wafer_usd: COST_MODEL.costPerWaferUsd,
       escape_prob_if_missed: COST_MODEL.escapeProbIfMissed,
@@ -168,26 +168,42 @@ export function incidentPayload(j = job) {
 /* --------------------------------------------------------------- actions */
 
 /**
- * Beat 2, the coding half: a PR against the recipe, not a knob on the tool.
- * Simulated — the card is authored, no forge is called — and the UI says so.
+ * Correction ids are derived from the die rather than counted, so the same die
+ * gets the same id every run — a presenter who reads one out loud is right the
+ * second time too. The stride keeps consecutive dies from looking like
+ * consecutive tickets in a queue that also serves the rest of the fab.
  */
-export function openPr() {
+const correctionId = (dieId) => `OCR-${4800 + Number(dieId.replace(/\D/g, '')) * 3}`;
+
+/**
+ * Beat 2, the paperwork half: a correction filed against the recipe rather than
+ * a knob turned on the tool.
+ *
+ * Filing is not fixing. The change goes into review and the die stays out of
+ * spec until somebody applies it — which is the whole point of having this lane
+ * next to the manual one. Simulated: the record is authored here, no change
+ * management system is called, and the card says so.
+ */
+export function submitRecipeChange() {
   if (!job) return null;
-  const number = 100 + Number(job.dieId.replace(/\D/g, ''));
-  job.prUrl = `https://github.com/asml-gtmko/overlay-recipes/pull/${number}`;
-  job.detail.pr = {
-    number,
-    title: `Fit T + R locally at site ${job.siteId} for ${job.lotId}`,
-    branch: `fix/${job.dieId.toLowerCase()}-site-${job.siteId.toLowerCase()}-local-fit`,
-    files: 3,
-    additions: 74,
-    deletions: 12,
-    state: 'open · awaiting review',
+  const id = correctionId(job.dieId);
+  job.recipeChangeId = id;
+  job.detail.recipe = {
+    id,
+    tool: LOT.tool,
+    recipe: LOT.recipe,
+    scope: `${job.lotId} · ${job.dieId} · site ${job.siteId}`,
+    correction: `local T + R fit at site ${job.siteId}; global knobs unchanged`,
+    status: 'in review',
+    apply: 'pending apply on the tool',
   };
-  job.steps.pr = 'done';
-  note('cloud agent', `PR #${number} opened — ${job.detail.pr.title}.`);
-  note(BOTS.owner.name, `PR #${number} linked to the incident. Review is the gate, not me.`);
-  return job.detail.pr;
+  job.steps.recipe = 'done';
+  note('process', `Recipe change ${id} submitted for review — ${job.detail.recipe.correction}.`);
+  note(
+    BOTS.owner.name,
+    `Recipe change ${id} linked to the incident. Process review is the gate, not me — the site is still open.`,
+  );
+  return job.detail.recipe;
 }
 
 /**

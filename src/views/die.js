@@ -17,7 +17,7 @@ import {
   worstSite,
 } from '../data.js';
 import { layoutPanel, planeCoords } from '../layout-svg.js';
-import { CAUGHT_BY, openPr, openRecovery } from '../recovery.js';
+import { CAUGHT_BY, openRecovery, submitRecipeChange } from '../recovery.js';
 import { COPY, setTldr } from '../tldr.js';
 import { healthChips, kv, layerRail, setStatus, setTabs, setTitleFile } from '../ui.js';
 
@@ -116,19 +116,20 @@ export function renderDie(app, dieId) {
         location.hash = `#/die/${die.id}/run`;
       });
     }
-    // The other half of beat 2: the same miss, handed to a coding task instead
-    // of to the floor. It opens the identical recovery job — the PR check is
-    // simply already ticked — and leaves the knob for the tool to turn.
-    const agentBtn = document.getElementById('run-agent-fix');
-    if (agentBtn) {
-      agentBtn.addEventListener('click', () => {
+    // The other half of beat 2: the same miss written up as a correction to the
+    // recipe instead of worked on the floor. It opens the identical recovery
+    // job — the recipe-change check is simply already ticked — and leaves the
+    // knob for the tool to turn.
+    const changeBtn = document.getElementById('submit-recipe-change');
+    if (changeBtn) {
+      changeBtn.addEventListener('click', () => {
         openRecovery({
           die,
           siteId: die.outlier ?? worstSite(die).id,
           residualBefore: maxResidual(die),
-          caughtBy: CAUGHT_BY.cloudAgent,
+          caughtBy: CAUGHT_BY.recipeChange,
         });
-        openPr();
+        submitRecipeChange();
         location.hash = '#/recovery';
       });
     }
@@ -218,7 +219,7 @@ function inspector(die, state, crude) {
       ${
         canFix
           ? `<button class="btn" id="run-fix">Run fix on this die →</button>
-             <button class="btn btn--ghost" id="run-agent-fix">Run Cloud Agent fix (opens a PR)</button>`
+             <button class="btn btn--ghost" id="submit-recipe-change">Submit recipe change</button>`
           : `<div class="banner banner--ok">${
               die.fixed
                 ? 'Fixed. Site ' +

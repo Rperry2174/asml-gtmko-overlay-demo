@@ -46,12 +46,19 @@ Then pick a lane. Both land in the same place:
 
 - **Run fix on this die →** — the manual factory run. Five steps, the mark comes
   home, the residual counts down to 0.6 nm, the good sites never move.
-- **Run Cloud Agent fix (opens a PR)** — the same miss handed to a coding task
-  instead of to the floor. A PR against the recipe, in review. The die is
-  *still* out of spec, because a PR is not a knob.
+- **Submit recipe change** — the same miss written up as an overlay correction
+  against the recipe instead of worked on the floor. `OCR-4821` is filed, in
+  review, pending apply. The die is *still* out of spec, because a filed change
+  is not a knob turned.
 
-For the 30-minute version, run the manual fix. Mention the Cloud Agent button
-exists and that it opens the identical incident with the PR check already ticked.
+For the 30-minute version, run the manual fix. Mention the recipe-change button
+exists and that it opens the identical incident with that first check already
+ticked.
+
+> Aside, for a technical room only: under the hood this second lane is the
+> coding-task story — a Cloud Agent drafting the correction and putting it up for
+> review. Say it out loud if it helps; the product surface stays fab-native and
+> never shows a repo, because a yield engineer does not open a forge to fix a die.
 
 ### 3 · The recovery rail — 8 min
 
@@ -60,7 +67,7 @@ version is at `#/recovery` and in the titlebar from anywhere.
 
 Five checks, and the incident is not closed until all five are:
 
-**PR · Impact logged · Shift notified · Weekly ROI · Backlog**
+**Recipe change · Impact logged · Shift notified · Weekly ROI · Backlog**
 
 Two Grok Bots are on the lane. `lot-incident-owner` woke on the red lot, acked
 the catch, and handed the priced question to `yield-impact-analyst`. Open
@@ -98,8 +105,9 @@ Real: the geometry, the residual arithmetic, the two competing model fits, the
 cost formula, the state changes, and the append call.
 
 Not real: the numbers are authored, the factory pipeline is a simulation on a
-timer, the PR card is authored, and the two Grok Bots are shown as a lane rather
-than called live from the app. Nothing in the UI claims otherwise.
+timer, the `OCR-4821` correction record is authored, and the two Grok Bots are
+shown as a lane rather than called live from the app. Nothing in the UI claims
+otherwise.
 
 **Reset demo** and hand the laptop on.
 
@@ -114,7 +122,7 @@ already in place. None of it needs the app rewritten.
 | **Slides generation** | the deck exists and the rail links it from `src/config/artifacts.js`, but the rows are rolled into it by hand — that is `ASML-102` | generate the week's slides from the log rows so the deck fills itself |
 | **Jira tickets** | two authored cards behind **Show backlog stub** | cluster the week's rows into themes and file real tickets |
 | **The two bots** | `agents/lot-incident-owner` and `agents/yield-impact-analyst`, instructions complete, teammate ids placeholdered | run one turn each, read the ids, patch them in with UpdateAgent — each README has the steps |
-| **Cloud Agent PR** | authored card | point it at a real repo so the coding lane opens a real PR |
+| **Recipe change** | authored `OCR-####` record behind **Submit recipe change** | file into the real change-management queue so review and apply are tracked where the fab already tracks them |
 
 ## Bot roles
 

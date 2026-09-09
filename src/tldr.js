@@ -94,12 +94,12 @@ export const COPY = {
     return remaining
       ? {
           tone: 'warn',
-          text: `TLDR: ${job.dieId} is caught and priced at ${usd(job.costAvoided)}. What is left is ownership — a code change, a row in the log, the shift told, Monday’s pack, and a ticket for the pattern behind it.`,
+          text: `TLDR: ${job.dieId} is caught and priced at ${usd(job.costAvoided)}. What is left is ownership — a recipe change, a row in the log, the shift told, Monday’s pack, and a ticket for the pattern behind it.`,
           sub: `Caught → priced → assigned. ${remaining} of 5 still open; an incident nobody owns is not closed.`,
         }
       : {
           tone: 'ok',
-          text: `TLDR: ${job.dieId} is closed. Caught at the tool, priced at ${usd(job.costAvoided)}, and every owner has it — code, log, floor, weekly pack, backlog.`,
+          text: `TLDR: ${job.dieId} is closed. Caught at the tool, priced at ${usd(job.costAvoided)}, and every owner has it — recipe change, log, floor, weekly pack, backlog.`,
           sub: 'Outcome: the money is written down and the pattern has a ticket instead of somebody’s memory.',
         };
   },

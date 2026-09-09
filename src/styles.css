@@ -1719,26 +1719,6 @@ a.btn {
   margin-top: 10px;
 }
 
-.diffstat {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-faint);
-}
-
-.diffstat code {
-  color: var(--cyan);
-}
-
-.diffstat__add {
-  color: var(--green);
-}
-
-.diffstat__del {
-  color: var(--red);
-}
-
 .rowtable {
   width: 100%;
   border-collapse: collapse;

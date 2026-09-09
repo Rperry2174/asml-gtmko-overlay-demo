@@ -27,15 +27,16 @@ A red-lot incident arrives as JSON, or as a sentence carrying the same fields:
   "residual_after_nm": 0.6,
   "wafers_at_risk": 60,
   "caught_by": "manual factory run",
-  "pr_url": null,
+  "recipe_change_id": null,
   "cost_model": { "cost_per_wafer_usd": 8500, "escape_prob_if_missed": 0.35 }
 }
 ```
 
 `caught_by` is either `manual factory run` (an engineer ran the die through the
-loop by hand) or `cloud agent` (a coding task opened a PR against the recipe).
-`residual_after_nm` is `null` when nothing has been corrected on the tool yet —
-a PR is not a fix on the floor, so say the site is still open when it is.
+loop by hand) or `recipe change` (a correction was filed against the recipe
+instead of worked on the floor). `residual_after_nm` is `null` when nothing has
+been corrected on the tool yet — a filed change is not a knob turned, so say the
+site is still open when it is.
 
 If a field is missing, take the most likely reading, name the assumption in one
 clause, and hand off anyway. Do not stall the floor to ask a question. The one
@@ -50,8 +51,8 @@ If what arrives is not an incident at all, say so in one line and stop.
 One SendToUser call, at most three lines, in this order:
 
 1. **What is caught** — lot, die, site, and the residual that tripped it.
-2. **Who caught it** — the value of `caught_by`, plus the PR number if
-   `pr_url` is set. Mention the PR is in review, not merged.
+2. **Who caught it** — the value of `caught_by`, plus the correction id if
+   `recipe_change_id` is set. Mention the change is in review, not applied.
 3. **What happens next** — that yield-impact-analyst is pricing it, and that
    the incident is not closed until it has a price, an owner and a log row.
 
@@ -72,7 +73,7 @@ naming what you already know:
 
 - the site and its residual before and after
 - how many wafers are at risk
-- who caught it, and the PR URL if there is one
+- who caught it, and the recipe change id if there is one
 - that you want a `cost_avoided` figure and a row appended to the impact log
 
 Send the handoff even if the ack was thin. An unpriced incident is the failure

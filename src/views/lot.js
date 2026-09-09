@@ -240,7 +240,7 @@ export function renderLot(app) {
                   const w = worstSite(d);
                   return `<div class="banner banner--warn">
                     <strong>${d.id}</strong> — site ${w.id} ${w.r.toFixed(1)} nm out · ${usd(dieCostAvoided(d))}.
-                    <br /><span class="muted">Open it, fix it by hand or hand it to a Cloud Agent.</span>
+                    <br /><span class="muted">Open it, fix it by hand or file a recipe change.</span>
                   </div>`;
                 })
                 .join('')
@@ -262,7 +262,7 @@ export function renderLot(app) {
               </div>
               <a class="btn btn--ghost" href="#/recovery">Open the recovery rail →</a>`
             : `<div class="banner banner--info">
-                No incident open. Fixing a die — by hand or with a Cloud Agent — starts one.
+                No incident open. Working a die — a fix by hand or a recipe change — starts one.
               </div>
               <a class="btn btn--ghost" href="#/recovery">Artifacts and cost model →</a>`
         }

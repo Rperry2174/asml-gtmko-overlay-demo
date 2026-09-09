@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ARTIFACTS, COST_MODEL, SHEET_COLUMNS, hasLiveUrl } from '../src/config/artifacts.js';
-import { applyFix, getDie, maxResidual, resetLot } from '../src/data.js';
+import { LOT, applyFix, getDie, maxResidual, resetLot } from '../src/data.js';
 import {
   CAUGHT_BY,
   RECOVERY_STEPS,
@@ -27,12 +27,12 @@ import {
   incidentPayload,
   logImpact,
   notifyShift,
-  openPr,
   openRecovery,
   openSteps,
   resetRecovery,
   showBacklog,
   showWeeklyPack,
+  submitRecipeChange,
 } from '../src/recovery.js';
 
 let passed = 0;
@@ -57,7 +57,7 @@ const openD07 = () => {
 await check('the checklist is the five the walkthrough names, in order', () => {
   assert.deepEqual(
     RECOVERY_STEPS.map((s) => s.label),
-    ['PR', 'Impact logged', 'Shift notified', 'Weekly ROI', 'Backlog'],
+    ['Recipe change', 'Impact logged', 'Shift notified', 'Weekly ROI', 'Backlog'],
   );
 });
 
@@ -94,21 +94,35 @@ await check('re-entering the same die updates the incident instead of forking it
     die,
     siteId: 'B',
     residualBefore: maxResidual(die),
-    caughtBy: CAUGHT_BY.cloudAgent,
+    caughtBy: CAUGHT_BY.recipeChange,
   });
   assert.equal(again, before, 'the same job object, not a replacement');
   assert.ok(again.caughtBy.includes(CAUGHT_BY.manual));
-  assert.ok(again.caughtBy.includes(CAUGHT_BY.cloudAgent));
+  assert.ok(again.caughtBy.includes(CAUGHT_BY.recipeChange));
 });
 
-await check('the PR check links a change and leaves the tool alone', () => {
-  const pr = openPr();
+await check('a filed recipe change closes its check and leaves the tool alone', () => {
+  const change = submitRecipeChange();
   const job = currentRecovery();
-  assert.equal(job.steps.pr, 'done');
-  assert.match(job.prUrl, /\/pull\/\d+$/);
-  assert.equal(pr.state, 'open · awaiting review');
-  // A PR is not a fix on the floor: the die is still out of spec.
+  assert.equal(job.steps.recipe, 'done');
+  assert.match(job.recipeChangeId, /^OCR-\d{4}$/);
+  assert.equal(change.id, job.recipeChangeId);
+  assert.equal(change.tool, LOT.tool);
+  assert.equal(change.status, 'in review');
+  // Filing is not fixing: nobody has turned a knob, so the die is still out of
+  // spec. This is the invariant that keeps the two lanes honestly different.
   assert.ok(maxResidual(getDie('D07')) > 3.0);
+  assert.ok(!getDie('D07').fixed);
+});
+
+await check('the recipe change carries no forge chrome — this is a fab artifact', () => {
+  const surface = JSON.stringify(currentRecovery());
+  for (const forge of ['github', 'pull request', 'pr #', '/pull/', 'branch']) {
+    assert.ok(
+      !surface.toLowerCase().includes(forge),
+      `recovery state must not leak "${forge}" into the product surface`,
+    );
+  }
 });
 
 await check('logging impact writes a full row and reports its transport', async () => {
@@ -118,7 +132,7 @@ await check('logging impact writes a full row and reports its transport', async 
   assert.equal(result.row.length, SHEET_COLUMNS.length);
   assert.equal(result.row[SHEET_COLUMNS.indexOf('cost_avoided_usd')], 178500);
   assert.equal(result.row[SHEET_COLUMNS.indexOf('die_id')], 'D07');
-  assert.equal(result.row[SHEET_COLUMNS.indexOf('pr_url')], job.prUrl);
+  assert.equal(result.row[SHEET_COLUMNS.indexOf('recipe_change_id')], job.recipeChangeId);
   // No page origin in Node, so the append cannot reach an endpoint — and the
   // helper says so rather than claiming the row landed in Sheets.
   assert.equal(result.transport, 'local');

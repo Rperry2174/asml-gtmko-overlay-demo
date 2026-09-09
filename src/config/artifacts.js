@@ -107,7 +107,7 @@ export const SHEET_COLUMNS = [
   'cost_avoided_usd',
   'caught_by',
   'owner',
-  'pr_url',
+  'recipe_change_id',
   'notes',
 ];
 
@@ -131,7 +131,7 @@ export function sheetRow(incident) {
     cost_avoided_usd: incident.costAvoided,
     caught_by: incident.caughtBy,
     owner: incident.owner,
-    pr_url: incident.prUrl ?? '',
+    recipe_change_id: incident.recipeChangeId ?? '',
     notes: incident.notes ?? '',
   };
   return SHEET_COLUMNS.map((c) => row[c]);
