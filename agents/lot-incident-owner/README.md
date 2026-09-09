@@ -17,9 +17,9 @@ figure is how a floor ends up with two answers.
 red lot (D07 / site B, 22 nm)
    └── manual factory run  or  filed recipe change
          └── lot-incident-owner        ← you are here
-               ├── SendToUser    "caught, 60 wafers behind it"
+               ├── SendToUser    "caught, 1,760 wafers behind it"
                └── SendToAgent   → yield-impact-analyst
-                                      ├── cost_avoided = $178,500
+                                      ├── cost_avoided = $18,480,000
                                       └── row appended to the impact log
 ```
 
@@ -43,7 +43,7 @@ npm run dev                  # http://127.0.0.1:3000/playground
 One turn from the terminal:
 
 ```bash
-npx agent-sdk run --message '{"lot_id":"LOT-2291-A","die_id":"D07","site_id":"B","residual_before_nm":22.0,"residual_after_nm":0.6,"wafers_at_risk":60,"caught_by":"manual factory run","recipe_change_id":null,"cost_model":{"cost_per_wafer_usd":8500,"escape_prob_if_missed":0.35}}'
+npx agent-sdk run --message '{"lot_id":"LOT-2291-A","die_id":"D07","site_id":"B","residual_before_nm":22.0,"residual_after_nm":0.6,"wafers_at_risk":1760,"caught_by":"manual factory run","recipe_change_id":null,"cost_model":{"cost_per_wafer_usd":30000,"escape_prob_if_missed":0.35}}'
 ```
 
 Checks that need no key and no network:

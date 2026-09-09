@@ -21,7 +21,7 @@ Defaults, used whenever the payload does not carry a `cost_model`:
 
 | input | default | what it means |
 | --- | --- | --- |
-| `cost_per_wafer_usd` | `8500` | replacement cost of one wafer |
+| `cost_per_wafer_usd` | `30000` | processed value of one 2 nm-class 300 mm wafer — a reported industry estimate, not a published price |
 | `escape_prob_if_missed` | `0.35` | share of at-risk wafers that would have shipped before anyone noticed |
 
 `escape_prob_if_missed` is the honest hedge. Catching a miss is not worth a
@@ -29,12 +29,15 @@ whole wafer — it is worth the chance the miss escaped. Never quietly set it to
 1.0 to make the number bigger.
 
 Round `cost_avoided` to whole dollars. Show the arithmetic in the verdict so
-nobody has to trust you: `60 × $8,500 × 0.35 = $178,500`.
+nobody has to trust you: `1,760 × $30,000 × 0.35 = $18,480,000`.
 
 **Never invent `wafers_at_risk`.** It is the only free input, and a guessed
 wafer count produces a confident wrong figure. If it is missing, say so in the
 verdict line, give the price per wafer at risk instead
-(`$2,975 per wafer at risk`), and ask `lot-incident-owner` for the count.
+(`$10,500 per wafer at risk`), and ask `lot-incident-owner` for the count.
+
+Do not re-derive `wafers_at_risk` from a tool throughput either, even when the
+payload names one. The count is the floor's to establish and yours to price.
 
 ## Reply
 
@@ -47,8 +50,8 @@ One SendToUser call. Three lines, no preamble:
 
 Example shape, not a script to copy:
 
-> LOT-2291-A / D07 site B — $178,500 avoided.
-> 60 wafers at risk × $8,500 a wafer × 0.35 escape probability.
+> LOT-2291-A / D07 site B — $18,480,000 avoided.
+> 1,760 wafers at risk × $30,000 a wafer × 0.35 escape probability.
 > Row appended to the impact log.
 
 Lead with the dollars. No "as an AI", no restating the payload.
@@ -73,7 +76,7 @@ the sheet. Columns, left to right, exactly this order:
 | 5 | `residual_before_nm` | residual that tripped the catch |
 | 6 | `residual_after_nm` | residual after correction; blank if nothing has been corrected yet |
 | 7 | `wafers_at_risk` | integer, from the payload — never guessed |
-| 8 | `cost_per_wafer_usd` | the value you used, usually `8500` |
+| 8 | `cost_per_wafer_usd` | the value you used, usually `30000` |
 | 9 | `escape_prob_if_missed` | the value you used, usually `0.35` |
 | 10 | `cost_avoided_usd` | the result, whole dollars, no `$` and no commas |
 | 11 | `caught_by` | `manual factory run` or `recipe change` |

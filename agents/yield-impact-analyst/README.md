@@ -15,13 +15,18 @@ impact log.
 cost_avoided = wafers_at_risk * cost_per_wafer_usd * escape_prob_if_missed
 ```
 
-Defaults are `8500` and `0.35`. On the hero die that is
-`60 × $8,500 × 0.35 = $178,500`, which is the figure the app prints at
+Defaults are `30000` and `0.35`. On the hero die that is
+`1,760 × $30,000 × 0.35 = $18,480,000`, which is the figure the app prints at
 `#/recovery` and the number `npm test` in the repo root asserts.
 
 `escape_prob_if_missed` is the hedge that keeps the claim defensible: catching a
 miss is worth the chance it would have shipped, not a whole wafer. The
 instructions say so, and say not to quietly raise it.
+
+`wafers_at_risk` arrives in the payload — 1,760 is an eight-hour drift window at
+the NXE:3800E's published 220 wafers an hour. The agent is told never to invent
+or re-derive it. Where each figure comes from is in
+[`docs/COST_MODEL.md`](../../docs/COST_MODEL.md).
 
 ## The impact log
 
@@ -59,7 +64,7 @@ npm run dev                  # http://127.0.0.1:3000/playground
 One turn from the terminal:
 
 ```bash
-npx agent-sdk run --message 'LOT-2291-A die D07 site B, 22.0 nm before / 0.6 nm after, 60 wafers at risk, caught by manual factory run. Price it and log it.'
+npx agent-sdk run --message 'LOT-2291-A die D07 site B, 22.0 nm before / 0.6 nm after, 1760 wafers at risk, caught by manual factory run. Price it and log it.'
 ```
 
 Checks that need no key and no network:

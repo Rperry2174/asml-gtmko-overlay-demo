@@ -39,8 +39,9 @@ a UI suite. It checks that B really is 22 nm out, that the crude fit really does
 that the fix moves nothing it should not, that the lot KPIs move afterwards, that the board opens
 fails-first with D07 on top, and that **Reset demo** puts every one of those numbers back.
 
-It also guards the money: that the cost model is still $8,500 a wafer at 0.35 escape probability,
-that D07 prices at $178,500 and the open lot at $303,450, that watch items are priced but not
+It also guards the money: that the cost model is still $30,000 a wafer at 0.35 escape probability,
+that a wafer count is the drift window at the tool's published 220 wph and not an authored number,
+that D07 prices at $18,480,000 and the open lot at $31,185,000, that watch items are priced but not
 counted, that fixing D07 drops the headline by exactly its own figure, and that the 14 columns
 `yield-impact-analyst` is briefed on are the same 14 the app writes. Nobody should be able to edit
 the demo data and quietly break a claim being made out loud on stage.
@@ -67,7 +68,7 @@ artifact whether the rail renders an open link or a stub badge. Jira is the only
 ## Reset demo
 
 **Reset demo** sits in the titlebar, so it is one click away from every view. It restores the
-authored opening state — 75% yield, 22.0 nm at D07, three open fails, $303,450 at risk, no knobs
+authored opening state — 75% yield, 22.0 nm at D07, three open fails, $31,185,000 at risk, no knobs
 turned, no open incident, board back to fails-first — and drops you on the lot board. Safe to mash
 between runs, including mid-factory-run:
 the pipeline is abandoned before the lot is restored, so a run in flight cannot write a fix into the
@@ -85,9 +86,9 @@ the die is worth if nobody catches it.
 
 The board leads with a **Lot health · current state** band — one summary surface, big numbers,
 sitting above the board controls so it never reads as a row of tabs: **75% predicted yield,
-22.0 nm max residual, 3 open fails, $303k at risk.**
+22.0 nm max residual, 3 open fails, $31.2M at risk.**
 
-That fourth number is `wafers_at_risk × $8,500 × 0.35` summed over the open fails, so the cost of
+That fourth number is `wafers_at_risk × $30,000 × 0.35` summed over the open fails, so the cost of
 the problem is on screen before anyone asks for it. Watch items carry a wafer count too but are
 left out of the sum — pricing a die nobody is going to touch inflates the headline.
 
@@ -124,7 +125,7 @@ Expand *message body sent to yield-impact-analyst* to show the payload; it is th
 agent project is written against, not a mock-up.
 
 **6. Press "Log impact"** — the analyst prices it out loud:
-`60 wafers × $8,500 × 0.35 = $178,500 avoided`, and a 14-column row appears. The append is a real
+`1,760 wafers × $30,000 × 0.35 = $18,480,000 avoided`, and a 14-column row appears. The append is a real
 `POST /api/impact/append`, and the badge reports which of three things happened — appended to the
 live Sheet, written to the dev server's local log, or held in the app. It never claims Sheets when
 it did not reach Sheets. **Notify shift**, **Show weekly pack** and **Show backlog stub** close the
@@ -132,7 +133,7 @@ other three; **Show weekly pack** opens the real Monday deck, and the backlog is
 carrying a stub badge, because nobody has filed those tickets yet.
 
 **7. Go back to the lot board** — D07 has moved out of *Needs fix* and into *In spec*, predicted
-yield is 83%, open fails is 2, and $ at risk has dropped by exactly D07's $178,500. The fix mutated
+yield is 83%, open fails is 2, and $ at risk has dropped by exactly D07's $18,480,000. The fix mutated
 the shared state, so the board reflects it.
 
 Two more dies (D05, D11) are still failing if you want to run the loop a second time — they are the
@@ -143,7 +144,7 @@ open incident with them.
 
 Every view has the same status strip in the same slot, answering one question: what is true on this
 screen right now. Counts, the site in question, the residual, the money on it — *3 dies failing
-overlay · 22.0 nm max residual · $303k at risk.* The subline is the next thing to do in the product:
+overlay · 22.0 nm max residual · $31.2M at risk.* The subline is the next thing to do in the product:
 *Open a die under Needs fix to start recovery.* On an open incident it names the checks that are
 actually open, in order, so it stays useful as the checklist is worked. It changes colour with the
 state — amber on the lot board, red on a failing die, green after a fix.
@@ -192,8 +193,8 @@ and a 0.21° rotation at B, and nothing anywhere else.
 index.html               app shell: titlebar, Reset demo, TLDR slot, status bar
 vite.config.js           the dev-only /api/impact/append endpoint
 src/main.js              hash router — #/lot, #/die/:id, #/die/:id/run, #/recovery — and the reset
-src/data.js              the 12 dies, both model fits, the fix, wafers at risk, board order, reset
-src/config/artifacts.js  Sheet / Slides / Jira, the cost model, the 14 impact-log columns
+src/data.js              the 12 dies, both model fits, the fix, drift windows, board order, reset
+src/config/artifacts.js  Sheet / Slides / Jira, the cost model, the tool spec, the 14 columns
 src/recovery.js          the five-check incident, the bot handoff, the append
 src/lib/impact-log.js    the append call and its three transports
 src/layout-svg.js        the coordinate plane, reticle geometry and the four marks
@@ -202,12 +203,13 @@ src/ui.js                health chips, layer rail, status bar
 src/views/               lot.js · die.js · factory.js · recovery.js
 src/styles.css           dark layout-tool theme
 docs/TEAM_WALKTHROUGH.md the 30-minute stage outline and who owns what next
+docs/COST_MODEL.md       every figure in the money, public sources and labelled assumptions
 agents/                  six separate Agent SDK projects, on two tracks — see below
 ```
 
 To change the story, edit `src/data.js` (residuals, which site is the outlier, health per
-dimension, wafers at risk), `src/config/artifacts.js` (the money and the links) and `src/tldr.js`
-(the words). The views derive everything else.
+dimension, how long each site has been drifting), `src/config/artifacts.js` (the money, the tool
+spec and the links) and `src/tldr.js` (the words). The views derive everything else.
 
 ## The cost model
 
@@ -218,9 +220,18 @@ prices anything a second way:
 cost_avoided = wafers_at_risk * cost_per_wafer_usd * escape_prob_if_missed
 ```
 
-Defaults are `8500` and `0.35`. `escape_prob_if_missed` is the honest hedge — catching a miss is
-worth the chance it would have shipped, not a whole wafer. On D07 that is
-`60 × $8,500 × 0.35 = $178,500`.
+`wafers_at_risk` is the drift window at the tool's own published throughput — 220 wafers an hour on
+an NXE:3800E — so the count on screen traces to a spec sheet rather than to a number somebody
+liked. `cost_per_wafer_usd` is `30000`, a 2 nm-class 300 mm wafer at the price the trade press
+reports, and it is called an estimate everywhere it appears because no foundry publishes wafer
+prices. `escape_prob_if_missed` is `0.35`, ours and the honest hedge — catching a miss is worth the
+chance it would have shipped, not a whole wafer.
+
+On D07 that is `1,760 wafers × $30,000 × 0.35 = $18,480,000`, from an eight-hour drift window.
+
+Every figure, which ones are ASML's published numbers and which ones are assumptions, is laid out
+in [`docs/COST_MODEL.md`](docs/COST_MODEL.md) — including the FY2025 net sales figure the scale is
+sanity-checked against. **There is no ASML internal data in this repo.**
 
 The 14 impact-log columns live in the same file and are duplicated in prose in
 `agents/yield-impact-analyst/agent/instructions.md`, because a model cannot import a module.

@@ -75,7 +75,7 @@ check("the cost formula is stated verbatim, with both defaults", () => {
     instructions,
     /cost_avoided = wafers_at_risk \* cost_per_wafer_usd \* escape_prob_if_missed/,
   );
-  assert.match(instructions, /`8500`/);
+  assert.match(instructions, /`30000`/);
   assert.match(instructions, /`0\.35`/);
 });
 
