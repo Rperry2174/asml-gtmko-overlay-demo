@@ -1,0 +1,7 @@
+node_modules/
+.agent-serve/
+*.log
+
+# secrets — a Cursor API key belongs in the environment or `agent-sdk login`
+.env
+.env.*

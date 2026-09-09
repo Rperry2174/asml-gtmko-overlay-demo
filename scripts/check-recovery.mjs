@@ -14,6 +14,9 @@
  */
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   ARTIFACTS,
   COST_MODEL,
@@ -145,6 +148,23 @@ await check('the Sheet is live, the Slides deck is still a placeholder', () => {
   assert.equal(ARTIFACTS.slides.url, SLIDES_URL_PENDING);
   assert.equal(hasLiveUrl(ARTIFACTS.slides), false, 'no dead link while the deck has no ID');
   assert.equal(hasLiveUrl(ARTIFACTS.jira), false, 'the backlog panel is a stub');
+});
+
+await check('the analyst is briefed on the same columns the app writes', () => {
+  // The column list is duplicated: once here for the app, once in prose for a
+  // model that cannot import anything. Duplication is only tolerable while
+  // something fails when the two drift, so this is that something.
+  const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const brief = readFileSync(
+    join(repo, 'agents', 'yield-impact-analyst', 'agent', 'instructions.md'),
+    'utf8',
+  );
+  const documented = [...brief.matchAll(/\|\s*\d+\s*\|\s*`([a-z_]+)`\s*\|/g)].map((m) => m[1]);
+  assert.deepEqual(
+    documented,
+    SHEET_COLUMNS,
+    'the numbered column table in the analyst instructions must match SHEET_COLUMNS, in order',
+  );
 });
 
 await check('reset demo drops the incident along with the lot', () => {
