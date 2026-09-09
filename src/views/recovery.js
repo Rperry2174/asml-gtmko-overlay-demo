@@ -15,7 +15,9 @@ import {
   COST_MODEL,
   JIRA_STUB_TICKETS,
   SHEET_COLUMNS,
+  TOOL_SPEC,
   hasLiveUrl,
+  qty,
   sheetRow,
   usd,
 } from '../config/artifacts.js';
@@ -128,7 +130,7 @@ function panel({ compact, open, busy }) {
       <div>
         <h2 class="recovery__title">Recovery · ${job.lotId} / ${job.dieId}</h2>
         <p class="recovery__meta">
-          site ${job.siteId} · caught by ${job.caughtBy} · ${job.wafersAtRisk} wafers at risk
+          site ${job.siteId} · caught by ${job.caughtBy} · ${qty(job.wafersAtRisk)} wafers at risk
         </p>
       </div>
       <div class="recovery__money">
@@ -389,7 +391,8 @@ export function renderRecovery(app) {
                 kv('site', job.siteId),
                 kv('caught by', job.caughtBy),
                 kv('owner', job.owner),
-                kv('wafers', String(job.wafersAtRisk)),
+                kv('wafers', qty(job.wafersAtRisk)),
+                kv('drift window', `${job.driftHours.toFixed(1)} h @ ${TOOL_SPEC.throughputWph} wph`),
               ].join('')
             : `<p class="muted">Nothing open.</p>`
         }

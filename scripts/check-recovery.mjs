@@ -64,8 +64,8 @@ await check('the checklist is the five the walkthrough names, in order', () => {
 await check('opening an incident prices it and wakes both bots', () => {
   const job = openD07();
   assert.equal(job.dieId, 'D07');
-  assert.equal(job.costAvoided, 178500);
-  assert.equal(job.wafersAtRisk, 60);
+  assert.equal(job.costAvoided, 18_480_000);
+  assert.equal(job.wafersAtRisk, 1760);
   assert.equal(openSteps().length, 5);
 
   // The intake bot acks the user and hands the priced question to the analyst.
@@ -82,7 +82,7 @@ await check('the handoff payload carries the cost model, not just the residual',
   const payload = incidentPayload();
   assert.equal(payload.die_id, 'D07');
   assert.equal(payload.site_id, 'B');
-  assert.equal(payload.wafers_at_risk, 60);
+  assert.equal(payload.wafers_at_risk, 1760);
   assert.equal(payload.cost_model.cost_per_wafer_usd, COST_MODEL.costPerWaferUsd);
   assert.equal(payload.cost_model.escape_prob_if_missed, COST_MODEL.escapeProbIfMissed);
 });
@@ -130,7 +130,7 @@ await check('logging impact writes a full row and reports its transport', async 
   const job = currentRecovery();
   assert.equal(job.steps.impact, 'done');
   assert.equal(result.row.length, SHEET_COLUMNS.length);
-  assert.equal(result.row[SHEET_COLUMNS.indexOf('cost_avoided_usd')], 178500);
+  assert.equal(result.row[SHEET_COLUMNS.indexOf('cost_avoided_usd')], 18_480_000);
   assert.equal(result.row[SHEET_COLUMNS.indexOf('die_id')], 'D07');
   assert.equal(result.row[SHEET_COLUMNS.indexOf('recipe_change_id')], job.recipeChangeId);
   // No page origin in Node, so the append cannot reach an endpoint — and the
@@ -139,7 +139,10 @@ await check('logging impact writes a full row and reports its transport', async 
 
   const analyst = botTurns().filter((t) => t.actor === 'yield-impact-analyst');
   assert.equal(analyst.length, 2);
-  assert.ok(analyst[0].text.includes('$178,500'));
+  assert.ok(analyst[0].text.includes('$18,480,000'));
+  // The arithmetic is said out loud, at the scale it actually runs at.
+  assert.ok(analyst[0].text.includes('1,760 wafers'), analyst[0].text);
+  assert.ok(analyst[0].text.includes('$30,000'), analyst[0].text);
 });
 
 await check('the incident is not closed until all five are', async () => {

@@ -5,10 +5,11 @@
  * this state, so the lot board reflects the fix when you navigate back.
  *
  * Units: residuals and knob translations in nanometres, mark positions in
- * micrometres, rotation in degrees, magnification in ppm, money in USD.
+ * micrometres, rotation in degrees, magnification in ppm, drift windows in
+ * hours, money in USD.
  */
 
-import { costAvoided } from './config/artifacts.js';
+import { TOOL_SPEC, costAvoided, wafersExposed } from './config/artifacts.js';
 
 /** Max residual (nm) a site may show and still count as on-spec. */
 export const SPEC_NM = 3.0;
@@ -18,7 +19,8 @@ export const WARN_NM = 8.0;
 export const LOT = {
   id: 'LOT-2291-A',
   layerPair: 'metal2 → metal1',
-  tool: 'NXE:3800E',
+  tool: TOOL_SPEC.model,
+  throughputWph: TOOL_SPEC.throughputWph,
   recipe: 'OVL_M2M1_4SITE_v7',
   cell: 'TOP',
   file: 'die_overlay_demo.gds',
@@ -65,9 +67,13 @@ function buildDie({ id, pos, residuals, extra }) {
     litho: extra.litho ?? 'ok',
     metrology: extra.metrology ?? 'ok',
     process: extra.process ?? 'ok',
-    // How many wafers ride on this die's field. Authored per die, because the
-    // money in the story has to be traceable to something, not to an average.
-    wafersAtRisk: extra.wafers ?? 0,
+    // How long this site has been out: the gap between the exposure that
+    // drifted and the overlay check that would have seen it.
+    driftHours: extra.hours ?? 0,
+    // How many wafers ride on this die's field — the drift window at the
+    // tool's published throughput, so the money traces back to a spec sheet
+    // rather than to a number somebody liked.
+    wafersAtRisk: extra.hours ? wafersExposed(extra.hours) : 0,
     notes: extra.notes ?? {},
     knobs: { global: ZERO_KNOBS(), local: {} },
     fixed: false,
@@ -82,7 +88,7 @@ const DIE_SPECS = [
   die('D03', [1, 4], { A: [0.6, 0.4], B: [0.7, -0.5], C: [2.4, -2.4], D: [0.5, 0.4] }, {
     outlier: 'C',
     metrology: 'warn',
-    wafers: 12,
+    hours: 1.0,
     notes: {
       metrology: 'Mark contrast low at C — 2 of 8 grabs rejected.',
       overlay: 'C drifting toward spec limit. Watch, do not touch yet.',
@@ -91,7 +97,7 @@ const DIE_SPECS = [
   die('D04', [2, 1], { A: [0.2, 0.4], B: [0.3, -0.3], C: [0.4, 0.2], D: [-0.3, 0.3] }),
   die('D05', [2, 2], { A: [0.6, 0.5], B: [0.4, 0.6], C: [0.5, -0.4], D: [8.9, -7.1] }, {
     outlier: 'D',
-    wafers: 24,
+    hours: 3.5,
     notes: { overlay: 'D greek-cross 11.4 nm out. Same signature as D07, smaller.' },
   }),
   die('D06', [2, 3], { A: [0.7, 0.5], B: [-0.5, 0.6], C: [0.6, 0.4], D: [0.5, -0.5] }),
@@ -99,7 +105,7 @@ const DIE_SPECS = [
   die('D07', [2, 4], { A: [0.3, 0.26], B: [17.2, -13.7], C: [-0.5, 0.49], D: [0.35, -0.36] }, {
     outlier: 'B',
     process: 'warn',
-    wafers: 60,
+    hours: 8.0,
     notes: {
       overlay: 'Box-in-box at B is 22 nm out. A, C, D are all inside 1 nm.',
       process: 'Knobs last touched 11 days ago. Nothing has compensated the B drift.',
@@ -111,14 +117,14 @@ const DIE_SPECS = [
   die('D09', [3, 2], { A: [1.9, 1.6], B: [0.6, 0.5], C: [0.5, -0.6], D: [0.7, 0.4] }, {
     outlier: 'A',
     process: 'warn',
-    wafers: 9,
+    hours: 0.5,
     notes: { process: 'Knob set is 14 days stale for this field.' },
   }),
   die('D10', [3, 3], { A: [0.4, -0.4], B: [0.3, 0.5], C: [0.5, 0.3], D: [-0.4, 0.4] }),
   die('D11', [3, 4], { A: [7.1, -5.4], B: [0.6, 0.4], C: [0.5, 0.6], D: [0.4, -0.5] }, {
     outlier: 'A',
     litho: 'warn',
-    wafers: 18,
+    hours: 2.0,
     notes: {
       litho: 'Dose drift on the left half of the field.',
       overlay: 'Cross at A 8.9 nm out.',

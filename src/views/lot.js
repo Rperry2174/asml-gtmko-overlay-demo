@@ -1,6 +1,6 @@
 /** View 1 — the lot board. Current state of every die in the lot. */
 
-import { usd, usdCompact } from '../config/artifacts.js';
+import { COST_MODEL, qty, usd, usdCompact } from '../config/artifacts.js';
 import {
   DIES,
   LOT,
@@ -213,7 +213,7 @@ export function renderLot(app) {
           <div class="stat">
             <div class="stat__label">$ at risk</div>
             <div class="stat__value stat__value--${k.dollarsAtRisk ? 'fail' : 'ok'}">${usdCompact(k.dollarsAtRisk)}</div>
-            <div class="stat__sub">open fails only · ${usd(k.dollarsAtRisk)} at $8.5k/wafer × 0.35 escape</div>
+            <div class="stat__sub">open fails only · ${usd(k.dollarsAtRisk)} at ${usdCompact(COST_MODEL.costPerWaferUsd)}/wafer × ${COST_MODEL.escapeProbIfMissed} escape</div>
           </div>
         </div>
       </section>

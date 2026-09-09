@@ -10,7 +10,17 @@
  */
 
 import assert from 'node:assert/strict';
-import { COST_MODEL, SHEET_COLUMNS, costAvoided, sheetRow } from '../src/config/artifacts.js';
+import {
+  ASML_PUBLIC,
+  COST_MODEL,
+  SHEET_COLUMNS,
+  TOOL_SPEC,
+  costAvoided,
+  perWaferAtRisk,
+  sheetRow,
+  usdCompact,
+  wafersExposed,
+} from '../src/config/artifacts.js';
 import {
   DIES,
   SPEC_NM,
@@ -54,19 +64,58 @@ check('D07 site B is 22 nm out and the other three are inside 1 nm', () => {
   }
 });
 
-check('the cost model is the one the story quotes: $8,500 a wafer, 0.35 escape', () => {
-  assert.equal(COST_MODEL.costPerWaferUsd, 8500);
+check('the cost model is the one the story quotes: $30,000 a wafer, 0.35 escape', () => {
+  assert.equal(COST_MODEL.costPerWaferUsd, 30000);
   assert.equal(COST_MODEL.escapeProbIfMissed, 0.35);
   // wafers_at_risk * cost_per_wafer_usd * escape_prob_if_missed, nothing else.
-  assert.equal(costAvoided(60), 60 * 8500 * 0.35);
+  assert.equal(costAvoided(1760), 1760 * 30000 * 0.35);
   assert.equal(costAvoided(0), 0);
+  assert.equal(perWaferAtRisk(), 10500);
+  // Every input that is not published carries the label saying so, because the
+  // whole claim rests on the room being able to tell the two apart.
+  assert.deepEqual(Object.keys(COST_MODEL.basis).sort(), [
+    'costPerWaferUsd',
+    'escapeProbIfMissed',
+    'wafersAtRisk',
+  ]);
 });
 
-check('D07 prices at $178,500 and the open lot at $303,450', () => {
-  assert.equal(dieCostAvoided(getDie('D07')), 178500);
-  assert.equal(dieCostAvoided(getDie('D05')), 71400);
-  assert.equal(dieCostAvoided(getDie('D11')), 53550);
-  assert.equal(lotKpis().dollarsAtRisk, 303450);
+check('the wafer count comes off the tool spec, not out of the air', () => {
+  // 220 wafers an hour is the NXE:3800E's published productivity, so an
+  // eight-hour sampling gap is a number a customer can check.
+  assert.equal(TOOL_SPEC.throughputWph, 220);
+  assert.equal(wafersExposed(8), 1760);
+  assert.equal(wafersExposed(0.5), 110);
+  assert.equal(getDie('D07').driftHours, 8);
+  assert.equal(getDie('D07').wafersAtRisk, wafersExposed(8));
+  for (const d of DIES) {
+    assert.equal(d.wafersAtRisk, wafersExposed(d.driftHours), `${d.id} wafer count is derived`);
+  }
+});
+
+check('the public anchor is ASML’s own reported FY2025 figure', () => {
+  // Scale only, and cited: if this drifts, `docs/COST_MODEL.md` is wrong too.
+  assert.equal(ASML_PUBLIC.fiscalYear, 2025);
+  assert.equal(ASML_PUBLIC.totalNetSalesEur, 32_700_000_000);
+  assert.equal(ASML_PUBLIC.netSystemSalesEur, 24_500_000_000);
+  assert.match(ASML_PUBLIC.sourceUrl, /^https:\/\/www\.asml\.com\//);
+});
+
+check('D07 prices at $18,480,000 and the open lot at $31,185,000', () => {
+  assert.equal(dieCostAvoided(getDie('D07')), 18_480_000);
+  assert.equal(dieCostAvoided(getDie('D05')), 8_085_000);
+  assert.equal(dieCostAvoided(getDie('D11')), 4_620_000);
+  assert.equal(lotKpis().dollarsAtRisk, 31_185_000);
+});
+
+check('the headline figure is printed in millions, not in six-figure k', () => {
+  assert.equal(usdCompact(31_185_000), '$31.2M');
+  assert.equal(usdCompact(18_480_000), '$18.5M');
+  assert.equal(usdCompact(2_310_000), '$2.3M');
+  // The k branch still has to work, and rounds the same way it always did.
+  assert.equal(usdCompact(178_500), '$179k');
+  assert.equal(usdCompact(10_500), '$10.5k');
+  assert.equal(usdCompact(0), '$0');
 });
 
 check('watch items are priced but not counted as money at risk', () => {
@@ -88,15 +137,15 @@ check('the impact row matches the sheet columns, dollars included', () => {
     siteId: 'B',
     residualBefore: 22.0,
     residualAfter: 0.6,
-    wafersAtRisk: 60,
-    costAvoided: 178500,
+    wafersAtRisk: 1760,
+    costAvoided: 18_480_000,
     caughtBy: 'manual factory run',
     owner: 'lot-incident-owner',
   });
   assert.equal(row.length, SHEET_COLUMNS.length);
-  assert.equal(row[SHEET_COLUMNS.indexOf('cost_avoided_usd')], 178500);
-  assert.equal(row[SHEET_COLUMNS.indexOf('wafers_at_risk')], 60);
-  assert.equal(row[SHEET_COLUMNS.indexOf('cost_per_wafer_usd')], 8500);
+  assert.equal(row[SHEET_COLUMNS.indexOf('cost_avoided_usd')], 18_480_000);
+  assert.equal(row[SHEET_COLUMNS.indexOf('wafers_at_risk')], 1760);
+  assert.equal(row[SHEET_COLUMNS.indexOf('cost_per_wafer_usd')], 30000);
   assert.equal(row[SHEET_COLUMNS.indexOf('escape_prob_if_missed')], 0.35);
   // An incident with no recipe change filed is an empty cell, not "null".
   assert.equal(row[SHEET_COLUMNS.indexOf('recipe_change_id')], '');
@@ -168,8 +217,8 @@ check('fixing one die moves the lot board KPIs, money included', () => {
   assert.equal(k.openFails, 2);
   assert.equal(k.yield.toFixed(0), '83');
   assert.equal(k.fixedCount, 1);
-  // D07's $178,500 leaves the headline the moment the die goes green.
-  assert.equal(k.dollarsAtRisk, 303450 - 178500);
+  // D07's $18,480,000 leaves the headline the moment the die goes green.
+  assert.equal(k.dollarsAtRisk, 31_185_000 - 18_480_000);
 });
 
 check('a fixed die leaves "needs fix" and joins the passing group', () => {
@@ -190,7 +239,7 @@ check('reset puts the KPIs back to the state the walkthrough opens on', () => {
   assert.equal(k.maxResidual.toFixed(1), '22.0');
   assert.equal(k.openFails, 3);
   assert.equal(k.watching, 2);
-  assert.equal(k.dollarsAtRisk, 303450);
+  assert.equal(k.dollarsAtRisk, 31_185_000);
   assert.equal(k.fixedCount, 0);
 
   // Restored in place, so a view still holding the old reference sees the
@@ -224,7 +273,7 @@ check('reset is idempotent — mash it as often as you like', () => {
   assert.equal(k.openFails, 3);
   assert.equal(k.yield.toFixed(0), '75');
   assert.equal(k.maxResidual.toFixed(1), '22.0');
-  assert.equal(k.dollarsAtRisk, 303450);
+  assert.equal(k.dollarsAtRisk, 31_185_000);
 });
 
 console.log(`\n${passed} claims hold.`);

@@ -12,7 +12,7 @@
  * argument lives in `README.md` and `docs/TEAM_WALKTHROUGH.md`.
  */
 
-import { usd, usdCompact } from './config/artifacts.js';
+import { qty, usd, usdCompact } from './config/artifacts.js';
 import { dieCostAvoided } from './data.js';
 import { RECOVERY_STEPS } from './recovery.js';
 
@@ -21,7 +21,7 @@ import { RECOVERY_STEPS } from './recovery.js';
  * same figure. The lot line sits above the health band, which sizes the total
  * for the back of the room, so it rounds with it. Everything else is one die,
  * and one die's figure is the one said out loud and written to the impact log —
- * `usdCompact` would round $178,500 to $179k and quietly disagree with both.
+ * `usdCompact` would round it to $18.5M and quietly disagree with both.
  */
 
 const el = {
@@ -72,7 +72,7 @@ export const COPY = {
   dieFail: (die, site, residual) => ({
     tone: 'fail',
     text: `${die.id} · site ${site} out of spec at ${residual.toFixed(1)} nm · ${usd(dieCostAvoided(die))} at risk`,
-    sub: `${die.wafersAtRisk} wafers behind this die. Run a factory fix or submit a recipe change.`,
+    sub: `${qty(die.wafersAtRisk)} wafers behind this die. Run a factory fix or submit a recipe change.`,
   }),
 
   dieWatch: (die, site, residual) => ({
