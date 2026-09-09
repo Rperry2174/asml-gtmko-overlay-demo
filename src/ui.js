@@ -53,6 +53,7 @@ export function setTabs(view) {
     { id: 'lot', label: 'Lot board', href: '#/lot' },
     { id: 'die', label: 'Cell · TOP', href: null },
     { id: 'factory', label: 'Factory run', href: null },
+    { id: 'recovery', label: 'Recovery', href: '#/recovery' },
   ];
   document.getElementById('titlebar-tabs').innerHTML = tabs
     .map((t) =>

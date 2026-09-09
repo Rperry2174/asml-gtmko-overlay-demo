@@ -1,10 +1,12 @@
 /** View 1 — the lot board. Current state of every die in the lot. */
 
+import { usd, usdCompact } from '../config/artifacts.js';
 import {
   DIES,
   LOT,
   SPEC_NM,
   boardGroups,
+  dieCostAvoided,
   dieStatus,
   health,
   lotKpis,
@@ -14,6 +16,7 @@ import {
   worstSite,
 } from '../data.js';
 import { dieThumb } from '../layout-svg.js';
+import { currentRecovery, openSteps } from '../recovery.js';
 import { COPY, setTldr } from '../tldr.js';
 import { healthChips, kv, setStatus, setTabs, setTitleFile } from '../ui.js';
 
@@ -28,8 +31,12 @@ export function resetBoardView() {
 function cardNote(die) {
   const status = dieStatus(die);
   const worst = worstSite(die);
-  if (die.fixed) return `Fixed by hand — knob turned at ${Object.keys(die.knobs.local)[0]} only.`;
-  if (status === 'fail') return `Site ${worst.id} is ${worst.r.toFixed(1)} nm out. Scrap risk.`;
+  if (die.fixed) {
+    return `Fixed — knob turned at ${Object.keys(die.knobs.local)[0]} only. ${usd(dieCostAvoided(die))} avoided.`;
+  }
+  if (status === 'fail') {
+    return `Site ${worst.id} is ${worst.r.toFixed(1)} nm out. ${usd(dieCostAvoided(die))} riding on it.`;
+  }
   if (status === 'warn') {
     const note = die.notes.metrology || die.notes.process || die.notes.overlay;
     return note || `Site ${worst.id} drifting at ${worst.r.toFixed(1)} nm. Watch it.`;
@@ -154,6 +161,7 @@ export function renderLot(app) {
   const fails = groups.fail;
   const watches = groups.warn;
   const yieldTone = k.openFails > 0 ? 'warn' : 'ok';
+  const job = currentRecovery();
 
   app.innerHTML = `
   <div class="workspace">
@@ -200,6 +208,13 @@ export function renderLot(app) {
             <div class="stat__value stat__value--${k.openFails ? 'fail' : 'ok'}">${k.openFails}</div>
             <div class="stat__sub">${k.fixedCount} fixed this session</div>
           </div>
+          <!-- The catch, in the only unit the room agrees on. Watch items are
+               not priced here: pricing a die nobody will touch inflates it. -->
+          <div class="stat">
+            <div class="stat__label">$ at risk</div>
+            <div class="stat__value stat__value--${k.dollarsAtRisk ? 'fail' : 'ok'}">${usdCompact(k.dollarsAtRisk)}</div>
+            <div class="stat__sub">open fails only · ${usd(k.dollarsAtRisk)} at $8.5k/wafer × 0.35 escape</div>
+          </div>
         </div>
       </section>
 
@@ -224,8 +239,8 @@ export function renderLot(app) {
                 .map((d) => {
                   const w = worstSite(d);
                   return `<div class="banner banner--warn">
-                    <strong>${d.id}</strong> — site ${w.id} ${w.r.toFixed(1)} nm out.
-                    <br /><span class="muted">Open it and run the fix by hand.</span>
+                    <strong>${d.id}</strong> — site ${w.id} ${w.r.toFixed(1)} nm out · ${usd(dieCostAvoided(d))}.
+                    <br /><span class="muted">Open it, fix it by hand or hand it to a Cloud Agent.</span>
                   </div>`;
                 })
                 .join('')
@@ -238,10 +253,25 @@ export function renderLot(app) {
         }
       </div>
 
+      <h2 class="rail__title">Recovery</h2>
+      <div class="rail__block stack">
+        ${
+          job
+            ? `<div class="banner banner--info">
+                <strong>${job.dieId}</strong> is open — ${usd(job.costAvoided)} priced, ${openSteps(job).length} of 5 checks left.
+              </div>
+              <a class="btn btn--ghost" href="#/recovery">Open the recovery rail →</a>`
+            : `<div class="banner banner--info">
+                No incident open. Fixing a die — by hand or with a Cloud Agent — starts one.
+              </div>
+              <a class="btn btn--ghost" href="#/recovery">Artifacts and cost model →</a>`
+        }
+      </div>
+
       <h2 class="rail__title">Why this matters</h2>
       <div class="rail__block prose">
-        <p>Every red die here is a wafer that either gets re-worked or thrown away.</p>
-        <p>Today an engineer opens each one, reads the marks, argues about the model, and turns a knob. That is the loop we are shortening.</p>
+        <p>Every red die here is wafers that ship wrong if nobody catches them.</p>
+        <p>Catching one is the easy part. Pricing it, writing it down and putting a name on it is the part that does not happen today — so the same miss gets re-argued next week.</p>
         <p class="section-note">v1 demo — simulated data, no live tool or model calls.</p>
       </div>
     </aside>

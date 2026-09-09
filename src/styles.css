@@ -645,13 +645,13 @@ button.tool:hover {
 
 .lot-health__stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .stat + .stat {
   border-left: 1px solid var(--line);
-  padding-left: 18px;
+  padding-left: 14px;
 }
 
 .stat__label {
@@ -663,7 +663,7 @@ button.tool:hover {
 
 /* Sized to be read from the back of a room, not from a laptop. */
 .stat__value {
-  font-size: 46px;
+  font-size: 42px;
   line-height: 1.05;
   margin-top: 4px;
   color: #eaf1f8;
@@ -1246,6 +1246,20 @@ button.tool:hover {
   cursor: default;
 }
 
+/* Artifacts open in a new tab, so some buttons are anchors. */
+a.btn {
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn--sm {
+  display: inline-block;
+  width: auto;
+  padding: 5px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .stack > * + * {
   margin-top: 8px;
 }
@@ -1429,6 +1443,400 @@ button.tool:hover {
   border-color: var(--line);
   background: #121821;
   color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------- recovery rail */
+
+/* The second half of the story: caught → priced → assigned. Same surface
+   language as the lot health band, because both are summaries rather than
+   controls — a single bordered block with internal dividers. */
+.recovery {
+  background: linear-gradient(180deg, #18202b 0%, #131924 100%);
+  border: 1px solid #2b3746;
+  border-radius: 5px;
+  padding: 12px 16px 14px;
+}
+
+.recovery__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 11px;
+  margin-bottom: 11px;
+  border-bottom: 1px solid var(--line);
+}
+
+.recovery__title {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #b6c3d2;
+}
+
+.recovery__meta {
+  margin: 5px 0 0;
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.recovery__money {
+  margin-left: auto;
+  text-align: right;
+}
+
+.recovery__money-v {
+  font-size: 30px;
+  line-height: 1;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.recovery__money-l {
+  margin-top: 3px;
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.recovery__state {
+  margin: 11px 0 0;
+  color: var(--amber);
+  font-size: 11px;
+}
+
+.recovery__state--ok {
+  color: var(--green);
+}
+
+.recovery__more {
+  margin-top: 12px;
+}
+
+/* the five checks */
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.check-row {
+  display: grid;
+  grid-template-columns: 16px 108px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.check-row:last-child {
+  border-bottom: 0;
+}
+
+.check-row__mark {
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.check-row.is-done .check-row__mark {
+  color: var(--green);
+}
+
+.check-row.is-pending .check-row__mark {
+  color: var(--amber);
+}
+
+.check-row__label {
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.check-row.is-done .check-row__label {
+  color: var(--green);
+}
+
+.check-row__detail {
+  color: var(--text-faint);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check-row.is-done .check-row__detail {
+  color: var(--text-dim);
+}
+
+/* the bot lane */
+.lane {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.lane__title {
+  margin: 0 0 9px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.lane__bots {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+}
+
+.lane__arrow {
+  align-self: center;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.bot {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #121821;
+  padding: 9px 11px;
+}
+
+.bot.is-awake {
+  border-color: #2f5f80;
+  background: #121c26;
+}
+
+.bot__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bot__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.bot.is-awake .bot__dot {
+  background: var(--cyan);
+  box-shadow: 0 0 7px rgba(33, 181, 240, 0.65);
+}
+
+.bot__name {
+  color: var(--text);
+}
+
+.bot__state {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.bot__role {
+  margin-top: 3px;
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.bot__line {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.bot__line--idle {
+  color: var(--text-faint);
+}
+
+.bot__to {
+  display: block;
+  color: var(--cyan);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.lane__payload {
+  margin-top: 10px;
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.lane__payload summary {
+  cursor: pointer;
+}
+
+.lane__payload pre {
+  margin: 8px 0 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-canvas);
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+/* artifact detail cards */
+.card {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--text);
+}
+
+.card__body {
+  padding: 11px 12px 13px;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.card__body .btn {
+  margin-top: 10px;
+}
+
+.diffstat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-faint);
+}
+
+.diffstat code {
+  color: var(--cyan);
+}
+
+.diffstat__add {
+  color: var(--green);
+}
+
+.diffstat__del {
+  color: var(--red);
+}
+
+.rowtable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rowtable td {
+  padding: 3px 8px 3px 0;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.rowtable__v {
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tickets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 9px;
+}
+
+.ticket {
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--orange);
+  border-radius: 3px;
+  background: #131a23;
+  padding: 9px 11px;
+}
+
+.ticket__key {
+  color: var(--orange);
+  letter-spacing: 0.06em;
+}
+
+.ticket__title {
+  margin-top: 4px;
+  color: var(--text);
+}
+
+.ticket__theme,
+.ticket__owner {
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+/* artifact links in the right rail */
+.artifact {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #131a23;
+  padding: 9px 11px;
+}
+
+.artifact__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.artifact__label {
+  color: var(--text);
+}
+
+.artifact__where {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.artifact__link {
+  display: inline-block;
+  margin-top: 5px;
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+.artifact__link:hover {
+  text-decoration: underline;
+}
+
+.artifact__pending {
+  display: inline-block;
+  margin-top: 5px;
+  color: var(--amber);
+  font-size: 10.5px;
+}
+
+.artifact__note {
+  margin: 5px 0 0;
+  color: var(--text-faint);
+  font-size: 10.5px;
+  line-height: 1.5;
 }
 
 /* ------------------------------------------------------------- statusbar */

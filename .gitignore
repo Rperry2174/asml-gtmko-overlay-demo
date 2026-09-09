@@ -5,6 +5,9 @@ dist/
 .vite/
 .agent-serve/
 
+# what the dev server's impact-log endpoint writes when it has no Sheets token
+.impact-log.jsonl
+
 # secrets
 .env
 **/.env

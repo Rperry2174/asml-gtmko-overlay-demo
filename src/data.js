@@ -5,8 +5,10 @@
  * this state, so the lot board reflects the fix when you navigate back.
  *
  * Units: residuals and knob translations in nanometres, mark positions in
- * micrometres, rotation in degrees, magnification in ppm.
+ * micrometres, rotation in degrees, magnification in ppm, money in USD.
  */
+
+import { costAvoided } from './config/artifacts.js';
 
 /** Max residual (nm) a site may show and still count as on-spec. */
 export const SPEC_NM = 3.0;
@@ -63,6 +65,9 @@ function buildDie({ id, pos, residuals, extra }) {
     litho: extra.litho ?? 'ok',
     metrology: extra.metrology ?? 'ok',
     process: extra.process ?? 'ok',
+    // How many wafers ride on this die's field. Authored per die, because the
+    // money in the story has to be traceable to something, not to an average.
+    wafersAtRisk: extra.wafers ?? 0,
     notes: extra.notes ?? {},
     knobs: { global: ZERO_KNOBS(), local: {} },
     fixed: false,
@@ -77,6 +82,7 @@ const DIE_SPECS = [
   die('D03', [1, 4], { A: [0.6, 0.4], B: [0.7, -0.5], C: [2.4, -2.4], D: [0.5, 0.4] }, {
     outlier: 'C',
     metrology: 'warn',
+    wafers: 12,
     notes: {
       metrology: 'Mark contrast low at C — 2 of 8 grabs rejected.',
       overlay: 'C drifting toward spec limit. Watch, do not touch yet.',
@@ -85,6 +91,7 @@ const DIE_SPECS = [
   die('D04', [2, 1], { A: [0.2, 0.4], B: [0.3, -0.3], C: [0.4, 0.2], D: [-0.3, 0.3] }),
   die('D05', [2, 2], { A: [0.6, 0.5], B: [0.4, 0.6], C: [0.5, -0.4], D: [8.9, -7.1] }, {
     outlier: 'D',
+    wafers: 24,
     notes: { overlay: 'D greek-cross 11.4 nm out. Same signature as D07, smaller.' },
   }),
   die('D06', [2, 3], { A: [0.7, 0.5], B: [-0.5, 0.6], C: [0.6, 0.4], D: [0.5, -0.5] }),
@@ -92,6 +99,7 @@ const DIE_SPECS = [
   die('D07', [2, 4], { A: [0.3, 0.26], B: [17.2, -13.7], C: [-0.5, 0.49], D: [0.35, -0.36] }, {
     outlier: 'B',
     process: 'warn',
+    wafers: 60,
     notes: {
       overlay: 'Box-in-box at B is 22 nm out. A, C, D are all inside 1 nm.',
       process: 'Knobs last touched 11 days ago. Nothing has compensated the B drift.',
@@ -103,12 +111,14 @@ const DIE_SPECS = [
   die('D09', [3, 2], { A: [1.9, 1.6], B: [0.6, 0.5], C: [0.5, -0.6], D: [0.7, 0.4] }, {
     outlier: 'A',
     process: 'warn',
+    wafers: 9,
     notes: { process: 'Knob set is 14 days stale for this field.' },
   }),
   die('D10', [3, 3], { A: [0.4, -0.4], B: [0.3, 0.5], C: [0.5, 0.3], D: [-0.4, 0.4] }),
   die('D11', [3, 4], { A: [7.1, -5.4], B: [0.6, 0.4], C: [0.5, 0.6], D: [0.4, -0.5] }, {
     outlier: 'A',
     litho: 'warn',
+    wafers: 18,
     notes: {
       litho: 'Dose drift on the left half of the field.',
       overlay: 'Cross at A 8.9 nm out.',
@@ -181,6 +191,24 @@ export function dieStatus(die) {
 
 export function getDie(id) {
   return DIES.find((d) => d.id === id);
+}
+
+/* ------------------------------------------------------------- the money */
+
+/** What catching this die is worth, by the one formula in the cost model. */
+export function dieCostAvoided(die) {
+  return costAvoided(die.wafersAtRisk);
+}
+
+/**
+ * Dollars sitting on the open fails right now.
+ *
+ * Watch items are deliberately excluded: they are drifting, not failing, and
+ * pricing a die nobody is going to touch inflates the number the presenter
+ * says out loud. Fix a die and it leaves this sum on the next render.
+ */
+export function dollarsAtRisk(dies = DIES) {
+  return dies.filter((d) => dieStatus(d) === 'fail').reduce((sum, d) => sum + dieCostAvoided(d), 0);
 }
 
 /* --------------------------------------------------------- board ordering */
@@ -334,6 +362,7 @@ export function lotKpis() {
     yield: (passing.length / DIES.length) * 100,
     maxResidual: DIES.reduce((m, d) => Math.max(m, maxResidual(d)), 0),
     openFails: fails.length,
+    dollarsAtRisk: dollarsAtRisk(),
     fixedCount: DIES.filter((d) => d.fixed).length,
     total: DIES.length,
   };

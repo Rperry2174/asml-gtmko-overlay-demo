@@ -1,9 +1,11 @@
 /** Hash router. Three views, one page, no framework. */
 
 import { resetLot } from './data.js';
+import { resetRecovery } from './recovery.js';
 import { renderLot, resetBoardView } from './views/lot.js';
 import { renderDie } from './views/die.js';
 import { abandonFactoryRun, renderFactory } from './views/factory.js';
+import { renderRecovery } from './views/recovery.js';
 
 const app = document.getElementById('app');
 
@@ -18,17 +20,23 @@ function route() {
     else renderDie(app, parts[1].toUpperCase());
     return;
   }
+  if (parts[0] === 'recovery') {
+    renderRecovery(app);
+    return;
+  }
   renderLot(app);
 }
 
 /**
- * Back to the top of the pitch: authored lot state, default board order, lot
- * board on screen. Safe to mash mid-run — abandoning the pipeline first stops
- * an in-flight factory run from writing a fix into the lot we just restored.
+ * Back to the top of the pitch: authored lot state, no open incident, default
+ * board order, lot board on screen. Safe to mash mid-run — abandoning the
+ * pipeline first stops an in-flight factory run from writing a fix into the lot
+ * we just restored.
  */
 function resetDemo() {
   abandonFactoryRun();
   resetLot();
+  resetRecovery();
   resetBoardView();
   // Only a hash we are not already on fires a hashchange, so render directly
   // when the presenter resets from the board itself.
