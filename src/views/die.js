@@ -50,7 +50,7 @@ export function renderDie(app, dieId) {
       <span class="tool ${status === 'ok' ? '' : 'tool--alert'}">${
         status === 'ok' ? 'all sites in spec' : `site ${worst.id} outlier`
       }</span>
-      <span class="toolbar__spacer">compare: golden vs measured</span>
+      <span class="toolbar__spacer">compare: measured (left) vs golden (right)</span>
     </div>
     <div class="panels" id="panels"></div>
     <p class="section-note" id="gain-note"></p>
@@ -67,16 +67,10 @@ export function renderDie(app, dieId) {
     const maxNow = state.preview ? crude.maxAfter : maxResidual(die);
     if (!state.preview) withTheta(die, rs);
 
+    // Broken on the left, ideal on the right. The miss is what the view is
+    // for, so it takes the position the eye starts from, and design intent
+    // sits beside it as the reference — not the other way round.
     document.getElementById('panels').innerHTML =
-      layoutPanel({
-        mode: 'golden',
-        residuals: residualsFor(die, 'golden'),
-        badge: 'GOLDEN · residual < 1 nm',
-        tone: 'ok',
-        specNm: SPEC_NM,
-        panelId: 'golden',
-        footnote: 'design intent',
-      }) +
       layoutPanel({
         mode: 'measured',
         residuals: rs,
@@ -87,7 +81,16 @@ export function renderDie(app, dieId) {
         selected: die.outlier ?? worst.id,
         specNm: SPEC_NM,
         panelId: 'measured',
-        footnote: state.preview ? 'what a weak model does' : 'after exposure',
+        footnote: state.preview ? 'what a weak model does' : 'what printed',
+      }) +
+      layoutPanel({
+        mode: 'golden',
+        residuals: residualsFor(die, 'golden'),
+        badge: 'GOLDEN · residual < 1 nm',
+        tone: 'ok',
+        specNm: SPEC_NM,
+        panelId: 'golden',
+        footnote: 'design intent',
       });
 
     document.getElementById('gain-note').textContent =

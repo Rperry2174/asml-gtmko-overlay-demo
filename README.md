@@ -101,8 +101,9 @@ its 22 nm is the first card on screen), then *Watching*, then *In spec*. Nobody 
 wafer grid for the red ones. The **Wafer map** button in the board controls puts the physical
 row/col order back if someone asks for it. Die IDs never change; only the display order does.
 
-**2. Open D07** — the split view. Golden on the left is design intent. Measured on the right is
-what actually printed. Marks A, C and D landed inside 1 nm. Site B is 22 nm out, drawn in red
+**2. Open D07** — the split view. Measured on the left is what actually printed. Golden on the
+right is design intent. The broken plane leads because it is the one being talked about; the
+reference sits beside it. Marks A, C and D landed inside 1 nm. Site B is 22 nm out, drawn in red
 with a Δx / Δy / |r| callout.
 
 **3. Press "Preview the crude fit (T only)"** — this is the argument. Fit one global translation

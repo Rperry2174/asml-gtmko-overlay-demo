@@ -42,8 +42,8 @@ do not improvise a defence of a number that already has one.
 
 ### 2 · The catch — 6 min
 
-Open **D07**. Golden left, measured right. A, C and D landed inside 1 nm; B is
-22 nm out.
+Open **D07**. Measured left — what printed — golden right, the design intent it
+should have matched. A, C and D landed inside 1 nm; B is 22 nm out.
 
 **Preview the crude fit (T only)** is the argument: fit one global translation
 and B barely improves while the three good sites get dragged out of spec. A
