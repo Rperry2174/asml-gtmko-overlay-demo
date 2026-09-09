@@ -15,7 +15,6 @@ import {
   COST_MODEL,
   JIRA_STUB_TICKETS,
   SHEET_COLUMNS,
-  SLIDES_URL_PENDING,
   hasLiveUrl,
   sheetRow,
   usd,
@@ -97,7 +96,7 @@ export function mountRecoveryPanel(host, { compact = false, onUpdate = null } = 
           case 'weekly':
             showWeeklyPack();
             open.weekly = compact ? false : !open.weekly;
-            if (hasLiveUrl(ARTIFACTS.slides)) window.open(ARTIFACTS.slides.url, '_blank', 'noopener');
+            window.open(ARTIFACTS.slides.url, '_blank', 'noopener');
             paint();
             break;
           case 'backlog':
@@ -191,9 +190,7 @@ function stepDetail(id, job) {
     case 'shift':
       return d.shift ? `${d.shift.channel} notified` : '—';
     case 'weekly':
-      return hasLiveUrl(ARTIFACTS.slides)
-        ? 'in the weekly pack'
-        : 'queued — the deck has no URL yet';
+      return 'in the weekly pack';
     case 'backlog':
       return `${JIRA_STUB_TICKETS.length} themes waiting on a teammate to file them`;
     default:
@@ -315,23 +312,15 @@ function impactCard(job) {
 }
 
 function weeklyCard() {
-  const live = hasLiveUrl(ARTIFACTS.slides);
   return `
   <article class="card">
     <header class="card__head">
-      <span class="pill pill--${live ? 'ok' : 'warn'}">Weekly ROI · ${live ? 'ready' : 'pending'}</span>
+      <span class="pill pill--ok">Weekly ROI · ready</span>
       <h3 class="card__title">${ARTIFACTS.slides.label}</h3>
     </header>
     <div class="card__body">
       <p>${ARTIFACTS.slides.note}</p>
-      ${
-        live
-          ? `<a class="btn btn--ghost" href="${ARTIFACTS.slides.url}" target="_blank" rel="noopener">Open the pack ↗</a>`
-          : `<p class="section-note">
-              No deck yet. <code>${SLIDES_URL_PENDING}</code> is still the value in
-              <code>src/config/artifacts.js</code> — drop the real URL there and this becomes a link.
-            </p>`
-      }
+      <a class="btn btn--ghost" href="${ARTIFACTS.slides.url}" target="_blank" rel="noopener">Open the pack ↗</a>
       <p class="section-note">Owned by: ${ARTIFACTS.slides.owner}.</p>
     </div>
   </article>`;
@@ -487,7 +476,7 @@ function artifactLink(a) {
     ${
       live
         ? `<a class="artifact__link" href="${a.url}" target="_blank" rel="noopener">open ↗</a>`
-        : `<span class="artifact__pending">${a.id === 'slides' ? 'URL pending' : 'stub'}</span>`
+        : `<span class="artifact__pending">stub</span>`
     }
     <p class="artifact__note">${a.note}</p>
   </div>`;

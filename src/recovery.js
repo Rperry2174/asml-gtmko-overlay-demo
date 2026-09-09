@@ -13,7 +13,7 @@
  * `src/views/recovery.js`.
  */
 
-import { ARTIFACTS, COST_MODEL, hasLiveUrl, usd } from './config/artifacts.js';
+import { ARTIFACTS, COST_MODEL, usd } from './config/artifacts.js';
 import { LOT, dieCostAvoided } from './data.js';
 import { appendImpactRow } from './lib/impact-log.js';
 
@@ -242,16 +242,11 @@ export function notifyShift() {
   return job.detail.shift;
 }
 
-/** Marks the pack seen. Opening the deck is the caller's job — it may not exist yet. */
+/** Marks the pack seen. Opening the deck itself is the caller's job. */
 export function showWeeklyPack() {
   if (!job) return ARTIFACTS.slides;
   job.steps.weekly = 'done';
-  note(
-    'floor',
-    hasLiveUrl(ARTIFACTS.slides)
-      ? 'Weekly ROI pack opened.'
-      : 'Weekly ROI pack is pending — the deck has no URL yet, so this incident is queued for it.',
-  );
+  note('floor', 'Weekly ROI pack opened.');
   return ARTIFACTS.slides;
 }
 

@@ -17,13 +17,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  ARTIFACTS,
-  COST_MODEL,
-  SHEET_COLUMNS,
-  SLIDES_URL_PENDING,
-  hasLiveUrl,
-} from '../src/config/artifacts.js';
+import { ARTIFACTS, COST_MODEL, SHEET_COLUMNS, hasLiveUrl } from '../src/config/artifacts.js';
 import { applyFix, getDie, maxResidual, resetLot } from '../src/data.js';
 import {
   CAUGHT_BY,
@@ -142,12 +136,24 @@ await check('the incident is not closed until all five are', async () => {
   assert.equal(openSteps().length, 0);
 });
 
-await check('the Sheet is live, the Slides deck is still a placeholder', () => {
+await check('the Sheet and the weekly deck are live, the backlog is still a stub', () => {
   assert.ok(hasLiveUrl(ARTIFACTS.sheet));
-  assert.match(ARTIFACTS.sheet.url, /^https:\/\/docs\.google\.com\/spreadsheets\//);
-  assert.equal(ARTIFACTS.slides.url, SLIDES_URL_PENDING);
-  assert.equal(hasLiveUrl(ARTIFACTS.slides), false, 'no dead link while the deck has no ID');
+  assert.match(ARTIFACTS.sheet.url, /^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+\/edit$/);
+  assert.ok(hasLiveUrl(ARTIFACTS.slides), 'the weekly pack opens a deck, not a placeholder');
+  assert.match(ARTIFACTS.slides.url, /^https:\/\/docs\.google\.com\/presentation\/d\/[\w-]+\/edit$/);
   assert.equal(hasLiveUrl(ARTIFACTS.jira), false, 'the backlog panel is a stub');
+});
+
+await check('the artifact links in the docs are the ones the app opens', () => {
+  // The Sheet and the deck are advertised twice: once in the config the rail
+  // reads, once in prose a presenter reads off a laptop. A stale URL in either
+  // one is a dead click on stage, so this is what fails when they drift.
+  const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
+  for (const doc of ['README.md', join('docs', 'TEAM_WALKTHROUGH.md')]) {
+    const prose = readFileSync(join(repo, doc), 'utf8');
+    assert.ok(prose.includes(ARTIFACTS.sheet.url), `${doc} links the live impact Sheet`);
+    assert.ok(prose.includes(ARTIFACTS.slides.url), `${doc} links the live weekly deck`);
+  }
 });
 
 await check('the analyst is briefed on the same columns the app writes', () => {
