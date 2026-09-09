@@ -187,6 +187,36 @@ await check('the analyst is briefed on the same columns the app writes', () => {
   );
 });
 
+await check('the intake brief is written against the payload the app actually sends', () => {
+  // Same duplication as the column table above, one bot along: the worked JSON
+  // in the intake brief is the only spec the model has for the message body,
+  // and it cannot import `incidentPayload`. Keys and nesting are the contract —
+  // the values in the brief are an example and are free to differ.
+  const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const brief = readFileSync(
+    join(repo, 'agents', 'lot-incident-owner', 'agent', 'instructions.md'),
+    'utf8',
+  );
+  const block = brief.match(/```json\n([\s\S]*?)```/);
+  assert.ok(block, 'the intake brief must carry a worked JSON payload');
+
+  const documented = JSON.parse(block[1]);
+  const sent = incidentPayload();
+  assert.deepEqual(Object.keys(documented), Object.keys(sent), 'top-level payload keys, in order');
+  assert.deepEqual(
+    Object.keys(documented.cost_model),
+    Object.keys(sent.cost_model),
+    'cost_model keys, in order',
+  );
+
+  // A documented `caught_by` the app stopped sending is the same drift one
+  // level down: the bot would be briefed on a value it will never receive.
+  assert.ok(
+    Object.values(CAUGHT_BY).includes(documented.caught_by),
+    `the brief's caught_by must be one the app sends: ${Object.values(CAUGHT_BY).join(' | ')}`,
+  );
+});
+
 await check('reset demo drops the incident along with the lot', () => {
   applyFix(getDie('D07'));
   resetLot();
