@@ -46,14 +46,25 @@ const job = (state) => ({
 const STATES = {
   'lot · fails': COPY.lot({
     openFails: 3,
+    watching: 2,
     maxResidual: 22.0,
     yield: 75,
     total: 12,
     fixedCount: 0,
     dollarsAtRisk: 303450,
   }),
+  'lot · watching': COPY.lot({
+    openFails: 0,
+    watching: 3,
+    maxResidual: 3.4,
+    yield: 100,
+    total: 12,
+    fixedCount: 3,
+    dollarsAtRisk: 0,
+  }),
   'lot · clean': COPY.lot({
     openFails: 0,
+    watching: 0,
     maxResidual: 0.6,
     yield: 100,
     total: 12,
@@ -103,6 +114,15 @@ check('the sublines name the next action in the product', () => {
   assert.match(STATES['recovery · open'].sub, /^Submit recipe change, then log impact\.$/);
   assert.match(STATES['die · fail'].sub, /Run a factory fix or submit a recipe change\./);
   assert.match(STATES['lot · fails'].sub, /Open a die under Needs fix to start recovery\./);
+  assert.match(STATES['lot · watching'].sub, /Open a die under Watching to see its worst site\./);
+});
+
+check('the lot line only calls the lot clean when nothing is still watching', () => {
+  // Fixing the three fails leaves dies above spec on the Watching rail, and a
+  // warn-toned max residual in the health band right under the strip.
+  assert.match(STATES['lot · watching'].text, /3 watching · 3\.4 nm max residual/);
+  assert.equal(STATES['lot · watching'].tone, 'warn');
+  assert.match(STATES['lot · clean'].text, /All 12 dies inside spec/);
 });
 
 check('money on screen is the same figure the surface underneath it prints', () => {

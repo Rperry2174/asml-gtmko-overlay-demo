@@ -362,6 +362,7 @@ export function lotKpis() {
     yield: (passing.length / DIES.length) * 100,
     maxResidual: DIES.reduce((m, d) => Math.max(m, maxResidual(d)), 0),
     openFails: fails.length,
+    watching: DIES.filter((d) => dieStatus(d) === 'warn').length,
     dollarsAtRisk: dollarsAtRisk(),
     fixedCount: DIES.filter((d) => d.fixed).length,
     total: DIES.length,

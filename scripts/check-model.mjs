@@ -189,6 +189,7 @@ check('reset puts the KPIs back to the state the walkthrough opens on', () => {
   assert.equal(k.yield.toFixed(0), '75');
   assert.equal(k.maxResidual.toFixed(1), '22.0');
   assert.equal(k.openFails, 3);
+  assert.equal(k.watching, 2);
   assert.equal(k.dollarsAtRisk, 303450);
   assert.equal(k.fixedCount, 0);
 

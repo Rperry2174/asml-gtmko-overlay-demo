@@ -45,18 +45,29 @@ export function setTldr({ text, sub, tone = 'neutral' }) {
 }
 
 export const COPY = {
-  lot: (kpis) =>
-    kpis.openFails > 0
-      ? {
-          tone: 'warn',
-          text: `${kpis.openFails} dies failing overlay · ${kpis.maxResidual.toFixed(1)} nm max residual · ${usdCompact(kpis.dollarsAtRisk)} at risk`,
-          sub: `${kpis.yield.toFixed(0)}% predicted yield. Open a die under Needs fix to start recovery.`,
-        }
-      : {
-          tone: 'ok',
-          text: `All ${kpis.total} dies inside spec · ${kpis.fixedCount} corrected this session · nothing at risk`,
-          sub: 'Nothing on the board needs a decision. Open the recovery rail for anything still on a checklist.',
-        },
+  lot: (kpis) => {
+    if (kpis.openFails > 0) {
+      return {
+        tone: 'warn',
+        text: `${kpis.openFails} dies failing overlay · ${kpis.maxResidual.toFixed(1)} nm max residual · ${usdCompact(kpis.dollarsAtRisk)} at risk`,
+        sub: `${kpis.yield.toFixed(0)}% predicted yield. Open a die under Needs fix to start recovery.`,
+      };
+    }
+    // Clearing the fails is not a clean lot: the watch items keep a die above
+    // spec and the health band warn-toned, so the strip has to count them.
+    if (kpis.watching > 0) {
+      return {
+        tone: 'warn',
+        text: `No dies failing overlay · ${kpis.watching} watching · ${kpis.maxResidual.toFixed(1)} nm max residual · nothing at risk`,
+        sub: 'No correction while the drift holds. Open a die under Watching to see its worst site.',
+      };
+    }
+    return {
+      tone: 'ok',
+      text: `All ${kpis.total} dies inside spec · ${kpis.fixedCount} corrected this session · nothing at risk`,
+      sub: 'Nothing on the board needs a decision. Open the recovery rail for anything still on a checklist.',
+    };
+  },
 
   dieFail: (die, site, residual) => ({
     tone: 'fail',
