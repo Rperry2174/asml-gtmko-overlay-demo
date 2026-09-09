@@ -62,6 +62,15 @@ const STATES = {
     fixedCount: 3,
     dollarsAtRisk: 0,
   }),
+  'lot · one fail': COPY.lot({
+    openFails: 1,
+    watching: 2,
+    maxResidual: 8.9,
+    yield: 92,
+    total: 12,
+    fixedCount: 2,
+    dollarsAtRisk: 53550,
+  }),
   'lot · clean': COPY.lot({
     openFails: 0,
     watching: 0,
@@ -106,6 +115,11 @@ check('no state slips back into demo-script voice', () => {
       assert.ok(!pattern.test(line), `${name} matches ${pattern} — ${why}:\n    ${line}`);
     }
   }
+});
+
+check('the last failing die is a die, not "1 dies"', () => {
+  assert.match(STATES['lot · one fail'].text, /^1 die failing overlay ·/);
+  assert.match(STATES['lot · fails'].text, /^3 dies failing overlay ·/);
 });
 
 check('the sublines name the next action in the product', () => {

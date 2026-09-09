@@ -49,7 +49,7 @@ export const COPY = {
     if (kpis.openFails > 0) {
       return {
         tone: 'warn',
-        text: `${kpis.openFails} dies failing overlay · ${kpis.maxResidual.toFixed(1)} nm max residual · ${usdCompact(kpis.dollarsAtRisk)} at risk`,
+        text: `${kpis.openFails} ${dies(kpis.openFails)} failing overlay · ${kpis.maxResidual.toFixed(1)} nm max residual · ${usdCompact(kpis.dollarsAtRisk)} at risk`,
         sub: `${kpis.yield.toFixed(0)}% predicted yield. Open a die under Needs fix to start recovery.`,
       };
     }
@@ -136,3 +136,5 @@ function nextActions(open) {
 }
 
 const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+
+const dies = (n) => (n === 1 ? 'die' : 'dies');
