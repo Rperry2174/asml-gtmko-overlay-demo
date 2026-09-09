@@ -54,7 +54,7 @@ export function renderDie(app, dieId) {
     </div>
     <div class="panels" id="panels"></div>
     <p class="section-note" id="gain-note"></p>
-    <div id="preview-note"></div>
+    <div id="die-note"></div>
     <div class="actions" id="actions"></div>
     <div class="tiles" id="inspector"></div>
   </div>`;
@@ -96,7 +96,7 @@ export function renderDie(app, dieId) {
     document.getElementById('gain-note').textContent =
       `Mark offsets are drawn ×100 so a nanometre-scale miss is visible on a 40 µm plane. Residual numbers are real.`;
 
-    document.getElementById('preview-note').innerHTML = previewNote(die, state, crude);
+    document.getElementById('die-note').innerHTML = dieNote(die, state, crude);
     document.getElementById('actions').innerHTML = actions(die, state);
     document.getElementById('inspector').innerHTML = inspector(die, state, crude);
     wire();
@@ -161,7 +161,7 @@ function tellStory(die) {
 
 /* ---------------------------------------------------------------- panels */
 
-/** The row of things to press, under the two planes. */
+/** The row of things to press. Buttons only — state is said above it. */
 function actions(die, state) {
   const canFix = maxResidual(die) > SPEC_NM;
   return `
@@ -173,29 +173,28 @@ function actions(die, state) {
     }
     <button class="btn btn--ghost" id="toggle-crude">
       ${state.preview ? 'Back to measured' : 'Preview the crude fit (T only)'}
-    </button>
-    ${
-      canFix
-        ? ''
-        : `<div class="banner banner--ok">${
-            die.fixed
-              ? 'Fixed. Site ' +
-                Object.keys(die.knobs.local)[0] +
-                ' is back inside spec and the good sites never moved.'
-              : 'Nothing to correct on this die.'
-          }</div>`
-    }`;
+    </button>`;
 }
 
-/** What the crude fit did, said once, directly under the plane showing it. */
-function previewNote(die, state, crude) {
-  if (!state.preview) return '';
-  const worst = worstSite(die);
-  return `<div class="banner banner--warn">
-    One global shift of ${nm(crude.T.dx)}, ${nm(crude.T.dy)} nm.
-    Site ${die.outlier ?? worst.id} barely improves and ${collateral(crude)}.
-    This is the correction the fix is arguing against.
-  </div>`;
+/**
+ * Where the die stands, in one line directly under the plane that shows it —
+ * either what the crude fit just did, or why there is nothing to press.
+ */
+function dieNote(die, state, crude) {
+  if (state.preview) {
+    const worst = worstSite(die);
+    return `<div class="banner banner--warn">
+      One global shift of ${nm(crude.T.dx)}, ${nm(crude.T.dy)} nm.
+      Site ${die.outlier ?? worst.id} barely improves and ${collateral(crude)}.
+      This is the correction the fix is arguing against.
+    </div>`;
+  }
+  if (maxResidual(die) > SPEC_NM) return '';
+  return `<div class="banner banner--ok">${
+    die.fixed
+      ? `Fixed. Site ${Object.keys(die.knobs.local)[0]} is back inside spec and the good sites never moved.`
+      : 'Nothing to correct on this die.'
+  }</div>`;
 }
 
 function inspector(die, state, crude) {
