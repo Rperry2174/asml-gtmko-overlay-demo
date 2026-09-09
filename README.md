@@ -34,16 +34,21 @@ npx serve .          # or: python3 -m http.server
 npm test             # asserts the numbers the pitch depends on
 ```
 
-`npm test` is a handful of assertions over the data model and the recovery job, not a UI suite. It
-checks that B really is 22 nm out, that the crude fit really does break A, C and D, that the fix
-moves nothing it should not, that the lot KPIs move afterwards, that the board opens fails-first
-with D07 on top, and that **Reset demo** puts every one of those numbers back.
+`npm test` is a handful of assertions over the data model, the recovery job and the strip copy, not
+a UI suite. It checks that B really is 22 nm out, that the crude fit really does break A, C and D,
+that the fix moves nothing it should not, that the lot KPIs move afterwards, that the board opens
+fails-first with D07 on top, and that **Reset demo** puts every one of those numbers back.
 
 It also guards the money: that the cost model is still $8,500 a wafer at 0.35 escape probability,
 that D07 prices at $178,500 and the open lot at $303,450, that watch items are priced but not
 counted, that fixing D07 drops the headline by exactly its own figure, and that the 14 columns
 `yield-impact-analyst` is briefed on are the same 14 the app writes. Nobody should be able to edit
 the demo data and quietly break a claim being made out loud on stage.
+
+And it guards the voice: `scripts/check-tldr.mjs` renders every state of the status strip and fails
+if demo-script narration turns up in one — a `TLDR:` prefix, the caught → priced → assigned mantra,
+`Pain: … Outcome: …`, or a line addressed to a room instead of to the operator. The app is a fab
+tool; the pitch lives in this file.
 
 ## Artifacts
 
@@ -136,15 +141,22 @@ open incident with them.
 
 ## The TLDR strip
 
-Every view has the same story strip in the same slot, in the same voice: plain English, short
-sentences, pain then outcome. It changes colour with the state — amber on the lot board, red on a
-failing die, green after a fix. It never gets replaced with raw numbers; the technical chrome sits
-below it. Copy lives in [`src/tldr.js`](src/tldr.js) so it can be re-voiced for a given audience
-without touching any view code.
+Every view has the same status strip in the same slot, answering one question: what is true on this
+screen right now. Counts, the site in question, the residual, the money on it — *3 dies failing
+overlay · 22.0 nm max residual · $303k at risk.* The subline is the next thing to do in the product:
+*Open a die under Needs fix to start recovery.* On an open incident it names the checks that are
+actually open, in order, so it stays useful as the checklist is worked. It changes colour with the
+state — amber on the lot board, red on a failing die, green after a fix.
 
-The arc through all of it is **caught → priced → assigned**. Scrap and re-work still come up, but
-as consequences rather than as the hero — the argument the demo is making is that a miss nobody
-prices is a miss nobody owns.
+It is a surface inside the tool, not a narrator standing next to it: no `TLDR:` prefix announcing a
+slot it already occupies, no mantra, no line addressed to a room, no argument about what the demo
+proves. `scripts/check-tldr.mjs` renders every state and fails on any of those, so the voice cannot
+drift back a line at a time. Copy lives in [`src/tldr.js`](src/tldr.js), so re-voicing it touches no
+view code.
+
+The argument the strip is deliberately not making is the one you make out loud: **caught → priced →
+assigned**, because a miss nobody prices is a miss nobody owns. That belongs here and in
+[`docs/TEAM_WALKTHROUGH.md`](docs/TEAM_WALKTHROUGH.md).
 
 ## What is real and what is not
 
@@ -185,7 +197,7 @@ src/config/artifacts.js  Sheet / Slides / Jira, the cost model, the 14 impact-lo
 src/recovery.js          the five-check incident, the bot handoff, the append
 src/lib/impact-log.js    the append call and its three transports
 src/layout-svg.js        the coordinate plane, reticle geometry and the four marks
-src/tldr.js              story strip copy and tone
+src/tldr.js              status strip copy and tone
 src/ui.js                health chips, layer rail, status bar
 src/views/               lot.js · die.js · factory.js · recovery.js
 src/styles.css           dark layout-tool theme

@@ -1,18 +1,28 @@
 /**
- * The story strip.
+ * The status strip.
  *
- * Same slot, same shape, same voice on every view — plain English, short
- * sentences, pain then outcome. Technical chrome lives below it and never
- * takes its place. If you are tempted to put raw numbers here, put them in the
- * inspector instead.
+ * Same slot on every view, answering one question: what is true on this screen
+ * right now. Counts, the site in question, the residual, the money on it, and
+ * what is still open. The subline is the next thing to do in the product.
  *
- * One arc runs through all of it: **caught → priced → assigned**. A miss is
- * caught at the tool, priced against the wafers behind it, and handed to an
- * owner. Everything else on screen is in service of those three words.
+ * It is a surface inside the tool, not a narrator standing next to it. No
+ * prefix announcing itself, no mantra, no line addressed to a room, no claim
+ * about what the software proves. If a line would not make sense to an operator
+ * with the app open and nobody presenting, it does not belong here — the
+ * argument lives in `README.md` and `docs/TEAM_WALKTHROUGH.md`.
  */
 
-import { usd } from './config/artifacts.js';
+import { usd, usdCompact } from './config/artifacts.js';
 import { dieCostAvoided } from './data.js';
+import { RECOVERY_STEPS } from './recovery.js';
+
+/*
+ * Money on the strip is printed the way the surface underneath it prints the
+ * same figure. The lot line sits above the health band, which sizes the total
+ * for the back of the room, so it rounds with it. Everything else is one die,
+ * and one die's figure is the one said out loud and written to the impact log —
+ * `usdCompact` would round $178,500 to $179k and quietly disagree with both.
+ */
 
 const el = {
   strip: () => document.getElementById('tldr'),
@@ -39,68 +49,79 @@ export const COPY = {
     kpis.openFails > 0
       ? {
           tone: 'warn',
-          text: `TLDR: ${kpis.openFails} dies in this lot printed out of alignment. Each one gets caught at the tool, priced against the wafers behind it, and handed to an owner — before the lot moves on.`,
-          sub: `Caught → priced → assigned. ${usd(kpis.dollarsAtRisk)} is riding on the open fails right now, and nobody had to go looking for that number.`,
+          text: `${kpis.openFails} dies failing overlay · ${kpis.maxResidual.toFixed(1)} nm max residual · ${usdCompact(kpis.dollarsAtRisk)} at risk`,
+          sub: `${kpis.yield.toFixed(0)}% predicted yield. Open a die under Needs fix to start recovery.`,
         }
       : {
           tone: 'ok',
-          text: 'TLDR: Nothing in this lot is out of alignment any more. Every miss that was here got caught, priced and assigned — and what each one was worth is written down.',
-          sub: 'Outcome: no open incidents, and the money the loop saved is in a log instead of an argument.',
+          text: `All ${kpis.total} dies inside spec · ${kpis.fixedCount} corrected this session · nothing at risk`,
+          sub: 'Nothing on the board needs a decision. Open the recovery rail for anything still on a checklist.',
         },
 
   dieFail: (die, site, residual) => ({
     tone: 'fail',
-    text: `TLDR: Site ${site} printed about ${Math.round(residual)} nm off. That is the catch. What it is worth and who owns it come next — and a weak global correction here would break the three sites that landed fine.`,
-    sub: `Caught → priced → assigned. ${usd(dieCostAvoided(die))} rides on this die: ${die.wafersAtRisk} wafers behind one bad mark.`,
+    text: `${die.id} · site ${site} out of spec at ${residual.toFixed(1)} nm · ${usd(dieCostAvoided(die))} at risk`,
+    sub: `${die.wafersAtRisk} wafers behind this die. Run a factory fix or submit a recipe change.`,
   }),
 
   dieWatch: (die, site, residual) => ({
     tone: 'warn',
-    text: `TLDR: This die still prints, but site ${site} is creeping — about ${residual.toFixed(1)} nm. Worth watching, not worth a correction yet. We price the misses we act on, not the ones we watch.`,
-    sub: 'Pain: teams over-correct on a hunch. Outcome: fix only what moved, when it actually moves.',
+    text: `${die.id} · site ${site} drifting at ${residual.toFixed(1)} nm · below the fail threshold`,
+    sub: 'Watch item — not counted in $ at risk, and no correction while it holds.',
   }),
 
-  dieOk: (die) => ({
-    tone: 'ok',
-    text: die.fixed
-      ? 'TLDR: This die is green. One knob at one site, and the good sites never moved. The catch is closed — what it was worth is in the impact log.'
-      : 'TLDR: This die is green. All four sites landed inside spec, so there is nothing here to catch, price or assign. This is what a healthy die looks like next to a bad one.',
-    sub: die.fixed
-      ? 'Caught → priced → assigned. Open the recovery rail to see the row it wrote.'
-      : 'Outcome: no action needed. Keep the knobs where they are.',
-  }),
+  dieOk: (die) =>
+    die.fixed
+      ? {
+          tone: 'ok',
+          text: `${die.id} back in spec · site ${Object.keys(die.knobs.local)[0]} corrected, the other sites unchanged · ${usd(dieCostAvoided(die))} avoided`,
+          sub: 'Complete the recovery checklist to close the incident.',
+        }
+      : {
+          tone: 'ok',
+          text: `${die.id} clean · all ${die.sites.length} sites inside spec`,
+          sub: 'Nothing to correct on this die.',
+        },
 
   factory: (site) => ({
     tone: 'warn',
-    text: `TLDR: You’re about to run one die through the factory by hand: read the measurements → pick the math → update process → re-check. Watch ${site} go green — then watch it get priced.`,
-    sub: 'Caught → priced → assigned. This supplements the model they already run; it does not replace it.',
+    text: `Factory run in progress · site ${site} under correction`,
+    sub: 'Five steps: read metrology, fit model, propose knobs, re-sim, pass/fail.',
   }),
 
   factoryDone: (site, before, after, dollars) => ({
     tone: 'ok',
-    text: `TLDR: Caught. Site ${site} came back from ${before.toFixed(0)} nm to ${after.toFixed(1)} nm and the good sites never moved. Now it gets priced and assigned — the recovery rail below is the rest of the job.`,
-    sub: `${usd(dollars)} avoided on this die alone, and the loop that found it is the one we automate next.`,
+    text: `Site ${site} back in spec · ${before.toFixed(1)} nm → ${after.toFixed(1)} nm · ${usd(dollars)} avoided`,
+    sub: 'Complete the recovery checklist below to close the incident.',
   }),
 
   recovery: (job) => {
     if (!job) {
       return {
         tone: 'neutral',
-        text: 'TLDR: Nothing is in recovery right now. This is where a caught miss gets a price, a row in the log, and an owner — the artifacts below outlive any one incident.',
-        sub: 'Caught → priced → assigned. Open a failing die to start one.',
+        text: 'No incident open · impact log, weekly pack and backlog carry over between incidents',
+        sub: 'Open a failing die and run a fix or submit a recipe change to start one.',
       };
     }
-    const remaining = Object.values(job.steps).filter((s) => s !== 'done').length;
-    return remaining
+    const open = RECOVERY_STEPS.filter((s) => job.steps[s.id] !== 'done');
+    return open.length
       ? {
           tone: 'warn',
-          text: `TLDR: ${job.dieId} is caught and priced at ${usd(job.costAvoided)}. What is left is ownership — a recipe change, a row in the log, the shift told, Monday’s pack, and a ticket for the pattern behind it.`,
-          sub: `Caught → priced → assigned. ${remaining} of 5 still open; an incident nobody owns is not closed.`,
+          text: `${job.dieId} · ${usd(job.costAvoided)} · ${open.length} of ${RECOVERY_STEPS.length} steps open`,
+          sub: nextActions(open),
         }
       : {
           tone: 'ok',
-          text: `TLDR: ${job.dieId} is closed. Caught at the tool, priced at ${usd(job.costAvoided)}, and every owner has it — recipe change, log, floor, weekly pack, backlog.`,
-          sub: 'Outcome: the money is written down and the pattern has a ticket instead of somebody’s memory.',
+          text: `${job.dieId} closed · ${usd(job.costAvoided)} in the impact log · all ${RECOVERY_STEPS.length} steps done`,
+          sub: 'Shift notified, in Monday’s ROI pack, theme filed to the backlog.',
         };
   },
 };
+
+/** "Submit recipe change, then log impact." — the checklist's own next steps. */
+function nextActions(open) {
+  const [first, second] = open;
+  return second ? `${first.action}, then ${lower(second.action)}.` : `${first.action}.`;
+}
+
+const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);

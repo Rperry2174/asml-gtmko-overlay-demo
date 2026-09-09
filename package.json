@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/check-model.mjs && node scripts/check-recovery.mjs",
+    "test": "node scripts/check-model.mjs && node scripts/check-recovery.mjs && node scripts/check-tldr.mjs",
     "incident:install": "npm --prefix agents/lot-incident-owner install",
     "incident:dev": "npm --prefix agents/lot-incident-owner run dev",
     "incident:validate": "npm --prefix agents/lot-incident-owner run validate",
