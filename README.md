@@ -266,9 +266,11 @@ npm run mistral:install && npm run mistral:validate
 npm run grok:install    && npm run grok:validate
 ```
 
-Each also carries `dev` and `check`. The router only routes when all three are mounted in one serve
-process — [its README](agents/asml-router/README.md#run-the-trio) has that command, and the
-deployment wiring for when they are three separate deployments instead.
+Each also carries `dev` and `check`. The router only routes when it can reach both peers — one serve
+process holding all three, or three processes wired by URL.
+[Its README](agents/asml-router/README.md#run-the-trio) has both, and the deployment wiring, and why
+`serve --dir agents` is not the command: the published `@cursor/july` refuses the `grokbot` projects
+sitting next to them.
 
 ### Yield track — Grok Bots
 

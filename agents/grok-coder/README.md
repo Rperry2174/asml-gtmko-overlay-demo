@@ -31,7 +31,7 @@ its own arithmetic, and checking the arithmetic is the job.
 
 ## Run it
 
-Useful on its own, and the router needs it mounted alongside to delegate:
+Useful on its own, and the router needs it reachable before it can delegate:
 
 ```bash
 npm install

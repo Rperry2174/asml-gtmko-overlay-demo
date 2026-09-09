@@ -22,7 +22,7 @@ deletes the thing being shown.
 
 ## Run it
 
-Useful on its own, and the router needs it mounted alongside to delegate:
+Useful on its own, and the router needs it reachable before it can delegate:
 
 ```bash
 npm install

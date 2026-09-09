@@ -24,31 +24,55 @@ one is the operator's manual.
 
 ## Run the trio
 
-Peer MCP connections address another agent **mounted in the same serve
-process**, so the router is not useful on its own. Serve the directory, not the
-package:
+The router is not useful alone — it has to reach its two peers. There are two
+ways to arrange that, and they are the same two ways the deployment story
+splits.
 
-```bash
-npm install --prefix agents/asml-router
-npm install --prefix agents/mistral
-npm install --prefix agents/grok-coder
+**`agent-sdk serve --dir agents` is not one of them.** `serve` takes a single
+`--dir` and mounts every child project under it, and `agents/` also holds the
+yield lane, which the published package refuses outright:
 
-npx agent-sdk login          # or: export CURSOR_API_KEY=...
-npx agent-sdk serve --dir agents/asml-router --dir agents/mistral --dir agents/grok-coder --dev
-# router playground: http://127.0.0.1:3000/asml-router/playground
+```
+runtime: "grokbot" is not available in the published @cursor/july package
 ```
 
-One turn from the terminal:
+### One process, peer slugs
+
+What `{ agent: "<slug>" }` is for. It needs a serve root containing only these
+three projects, so point `--dir` at a directory holding the coding track and
+nothing else:
 
 ```bash
+npx agent-sdk login          # or: export CURSOR_API_KEY=...
+npx agent-sdk serve --dir <coding-only-dir> --dev
+# router playground: http://127.0.0.1:3000/asml-router/playground
+
 npx agent-sdk chat --url http://127.0.0.1:3000/asml-router \
   --message "Fit T + R to the four site residuals on D07 and report the fit in nm."
 # asml-router → grok-coder.ask → grok-coder's own session → reply
 ```
 
-`agent-sdk serve --dir agents` would mount the whole folder, including the
-three `grokbot` agents. Mount the three coding packages explicitly and leave
-the yield lane alone.
+No environment variables. `serve` throws at startup if a peer slug is missing,
+so a mount you forgot fails immediately rather than at delegation time.
+
+### Three processes, peer URLs
+
+Works from the tree as it stands, and rehearses exactly the wiring a deployed
+router uses. Each agent serves itself in single mode; the router is pointed at
+the other two:
+
+```bash
+npm --prefix agents/mistral    run serve -- --port 3001
+npm --prefix agents/grok-coder run serve -- --port 3002
+
+MISTRAL_MCP_URL=http://127.0.0.1:3001/v1/mcp \
+GROK_CODER_MCP_URL=http://127.0.0.1:3002/v1/mcp \
+  npm --prefix agents/asml-router run dev -- --port 3000
+```
+
+No alias tokens on loopback — `serve` admits direct local callers by default.
+`agent-sdk info` on the router prints the transport each connection resolved
+to, which is the quickest way to confirm the override took.
 
 Checks that need no key and no network:
 
@@ -73,7 +97,8 @@ Deploy the two peers first, the same way with their own slugs and paths.
 **Managed hosting gives every deployment its own process, so the peer slugs do
 not resolve across deployments.** `agent-sdk serve` throws at startup on an
 unmounted slug, which would take the deployed router down rather than degrade
-it. So the connection files switch transport when the environment says to:
+it. So the connection files switch transport when the environment says to — the
+same override the three-process setup above uses, with real credentials:
 
 | secret | value |
 | --- | --- |

@@ -66,9 +66,8 @@ mid-conversation throws away the context the peer already built.
 
 ## When the peers are not reachable
 
-Peer connections resolve only when all three agents are mounted in one serve
-process. If `ask` is not on your toolset or the call fails, say so plainly and
-stop:
+If `ask` is not on your toolset, or the call fails, the peers are not wired up
+on this host. Say so plainly and stop:
 
 > Routing to `grok-coder` — overlay residual fitting is unit-bearing numerics.
 > Peer connection unavailable, so nothing has run.
