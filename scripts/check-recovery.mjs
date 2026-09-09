@@ -34,6 +34,9 @@ import {
   showBacklog,
   showWeeklyPack,
 } from '../src/recovery.js';
+// Safe outside a browser: COPY is plain data, and setTldr only touches the DOM
+// when it is called.
+import { COPY } from '../src/tldr.js';
 
 let passed = 0;
 const check = async (name, fn) => {
@@ -130,10 +133,24 @@ await check('logging impact writes a full row and reports its transport', async 
 
 await check('the incident is not closed until all five are', async () => {
   assert.equal(openSteps().length, 3);
+  const midway = COPY.recovery(currentRecovery());
+  assert.equal(midway.tone, 'warn', 'an open incident must not read as done');
+  assert.match(midway.sub, /3 of 5 still open/);
+
   notifyShift();
   showWeeklyPack();
   showBacklog();
   assert.equal(openSteps().length, 0);
+});
+
+await check('closing the fifth check turns the story strip green', () => {
+  // The strip went stale here once already. Tone and words come from the same
+  // returned object, so this is the whole distance between "all five closed"
+  // on the panel and a strip above it still reading amber.
+  const closed = COPY.recovery(currentRecovery());
+  assert.equal(closed.tone, 'ok');
+  assert.match(closed.text, /D07 is closed/);
+  assert.match(closed.text, /\$178,500/);
 });
 
 await check('the Sheet and the weekly deck are live, the backlog is still a stub', () => {
@@ -154,6 +171,33 @@ await check('the artifact links in the docs are the ones the app opens', () => {
     assert.ok(prose.includes(ARTIFACTS.sheet.url), `${doc} links the live impact Sheet`);
     assert.ok(prose.includes(ARTIFACTS.slides.url), `${doc} links the live weekly deck`);
   }
+});
+
+await check('the incident owner is briefed on the payload the app actually sends', () => {
+  // The rail shows this JSON under "message body sent to yield-impact-analyst"
+  // and the walkthrough claims it is the real contract rather than a mock-up.
+  // That claim is only true while the worked example in the intake brief has
+  // the same shape the app builds.
+  const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const brief = readFileSync(
+    join(repo, 'agents', 'lot-incident-owner', 'agent', 'instructions.md'),
+    'utf8',
+  );
+  const block = brief.match(/```json\n([\s\S]*?)```/);
+  assert.ok(block, 'the intake brief must carry a worked payload example');
+
+  const example = JSON.parse(block[1]);
+  const die = getDie('D07');
+  const live = incidentPayload(
+    openRecovery({
+      die,
+      siteId: 'B',
+      residualBefore: maxResidual(die),
+      caughtBy: CAUGHT_BY.manual,
+    }),
+  );
+  assert.deepEqual(Object.keys(example).sort(), Object.keys(live).sort());
+  assert.deepEqual(Object.keys(example.cost_model).sort(), Object.keys(live.cost_model).sort());
 });
 
 await check('the analyst is briefed on the same columns the app writes', () => {
