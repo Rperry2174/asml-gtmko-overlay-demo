@@ -12,6 +12,7 @@ import {
   SPEC_NM,
   applyFix,
   crudeFromResiduals,
+  dieCostAvoided,
   dieStatus,
   getDie,
   health,
@@ -22,8 +23,10 @@ import {
   residuals,
 } from '../data.js';
 import { layoutPanel, setMarkResidual } from '../layout-svg.js';
+import { CAUGHT_BY, openRecovery } from '../recovery.js';
 import { COPY, setTldr } from '../tldr.js';
 import { kv, setStatus, setTabs, setTitleFile } from '../ui.js';
+import { mountRecoveryPanel } from './recovery.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const resTone = (r) => (r > 8 ? 'fail' : r > SPEC_NM ? 'warn' : 'ok');
@@ -120,6 +123,9 @@ export function renderFactory(app, dieId) {
       </div>
       <div class="stack" style="margin-top:12px">
         <div id="verdict"></div>
+        <!-- Filled once the run passes: the die is green, the incident is not
+             closed. The full rail is one click away at #/recovery. -->
+        <div id="recovery-slot"></div>
       </div>
     </section>
 
@@ -317,8 +323,22 @@ async function runPipeline({ app, die, fit, crude, before, worst, siteId, token 
       </div>`
     : `<div class="banner banner--warn"><strong>Still out.</strong> ${die.id} needs another pass.</div>`;
 
-  setTldr(COPY.factoryDone(siteId, result.before, result.after));
+  setTldr(COPY.factoryDone(siteId, result.before, result.after, dieCostAvoided(die)));
   setStatus(`factory run · ${die.id}`, pass ? 'complete · pass' : 'complete · fail', `${LOT.file} · simulated`);
+
+  // Beat 3: the run is over, the recovery job is not. Opening it here — rather
+  // than at the top of the run — means a pipeline the presenter walked away
+  // from never leaves a half-priced incident behind.
+  if (pass) {
+    openRecovery({
+      die,
+      siteId,
+      residualBefore: result.before,
+      residualAfter: result.after,
+      caughtBy: CAUGHT_BY.manual,
+    });
+    mountRecoveryPanel(document.getElementById('recovery-slot'), { compact: true });
+  }
 }
 
 /** Health dimensions, overlay aside, that are still not clean on this die. */

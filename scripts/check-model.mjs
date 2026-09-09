@@ -10,13 +10,16 @@
  */
 
 import assert from 'node:assert/strict';
+import { COST_MODEL, SHEET_COLUMNS, costAvoided, sheetRow } from '../src/config/artifacts.js';
 import {
   DIES,
   SPEC_NM,
   applyFix,
   boardGroups,
   crudeGlobalFit,
+  dieCostAvoided,
   dieStatus,
+  dollarsAtRisk,
   failsFirst,
   getDie,
   localFit,
@@ -49,6 +52,54 @@ check('D07 site B is 22 nm out and the other three are inside 1 nm', () => {
   for (const s of rs.filter((x) => x.id !== 'B')) {
     assert.ok(s.r < 1.0, `site ${s.id} should be under 1 nm, got ${s.r}`);
   }
+});
+
+check('the cost model is the one the story quotes: $8,500 a wafer, 0.35 escape', () => {
+  assert.equal(COST_MODEL.costPerWaferUsd, 8500);
+  assert.equal(COST_MODEL.escapeProbIfMissed, 0.35);
+  // wafers_at_risk * cost_per_wafer_usd * escape_prob_if_missed, nothing else.
+  assert.equal(costAvoided(60), 60 * 8500 * 0.35);
+  assert.equal(costAvoided(0), 0);
+});
+
+check('D07 prices at $178,500 and the open lot at $303,450', () => {
+  assert.equal(dieCostAvoided(getDie('D07')), 178500);
+  assert.equal(dieCostAvoided(getDie('D05')), 71400);
+  assert.equal(dieCostAvoided(getDie('D11')), 53550);
+  assert.equal(lotKpis().dollarsAtRisk, 303450);
+});
+
+check('watch items are priced but not counted as money at risk', () => {
+  // D03 and D09 have wafers behind them, and they are drifting rather than
+  // failing — pricing a die nobody is going to touch inflates the headline.
+  assert.ok(dieCostAvoided(getDie('D03')) > 0);
+  assert.ok(dieCostAvoided(getDie('D09')) > 0);
+  const failsOnly = DIES.filter((d) => dieStatus(d) === 'fail').reduce(
+    (sum, d) => sum + dieCostAvoided(d),
+    0,
+  );
+  assert.equal(dollarsAtRisk(), failsOnly);
+});
+
+check('the impact row matches the sheet columns, dollars included', () => {
+  const row = sheetRow({
+    lotId: 'LOT-2291-A',
+    dieId: 'D07',
+    siteId: 'B',
+    residualBefore: 22.0,
+    residualAfter: 0.6,
+    wafersAtRisk: 60,
+    costAvoided: 178500,
+    caughtBy: 'manual factory run',
+    owner: 'lot-incident-owner',
+  });
+  assert.equal(row.length, SHEET_COLUMNS.length);
+  assert.equal(row[SHEET_COLUMNS.indexOf('cost_avoided_usd')], 178500);
+  assert.equal(row[SHEET_COLUMNS.indexOf('wafers_at_risk')], 60);
+  assert.equal(row[SHEET_COLUMNS.indexOf('cost_per_wafer_usd')], 8500);
+  assert.equal(row[SHEET_COLUMNS.indexOf('escape_prob_if_missed')], 0.35);
+  // An unset PR is an empty cell, not the string "null".
+  assert.equal(row[SHEET_COLUMNS.indexOf('pr_url')], '');
 });
 
 check('the crude global-T fit pushes A, C and D out of spec', () => {
@@ -112,11 +163,13 @@ check('applying the fix brings B inside spec and moves nothing else', () => {
   assert.ok(maxResidual(d07) <= SPEC_NM);
 });
 
-check('fixing one die moves the lot board KPIs', () => {
+check('fixing one die moves the lot board KPIs, money included', () => {
   const k = lotKpis();
   assert.equal(k.openFails, 2);
   assert.equal(k.yield.toFixed(0), '83');
   assert.equal(k.fixedCount, 1);
+  // D07's $178,500 leaves the headline the moment the die goes green.
+  assert.equal(k.dollarsAtRisk, 303450 - 178500);
 });
 
 check('a fixed die leaves "needs fix" and joins the passing group', () => {
@@ -136,6 +189,7 @@ check('reset puts the KPIs back to the state the walkthrough opens on', () => {
   assert.equal(k.yield.toFixed(0), '75');
   assert.equal(k.maxResidual.toFixed(1), '22.0');
   assert.equal(k.openFails, 3);
+  assert.equal(k.dollarsAtRisk, 303450);
   assert.equal(k.fixedCount, 0);
 
   // Restored in place, so a view still holding the old reference sees the
@@ -169,6 +223,7 @@ check('reset is idempotent — mash it as often as you like', () => {
   assert.equal(k.openFails, 3);
   assert.equal(k.yield.toFixed(0), '75');
   assert.equal(k.maxResidual.toFixed(1), '22.0');
+  assert.equal(k.dollarsAtRisk, 303450);
 });
 
 console.log(`\n${passed} claims hold.`);

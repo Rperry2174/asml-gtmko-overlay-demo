@@ -1,0 +1,7 @@
+node_modules/
+.agent-serve/
+*.log
+
+# secrets — Cursor and Google credentials belong in the environment, never here
+.env
+.env.*
