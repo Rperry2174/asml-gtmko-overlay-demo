@@ -94,7 +94,7 @@ export function renderDie(app, dieId) {
       });
 
     document.getElementById('gain-note').textContent =
-      `Mark offsets are drawn ×100 so a nanometre-scale miss is visible on a 40 µm plane. Residual numbers are real.`;
+      `Mark offsets are drawn ×100 so a nanometre-scale miss is visible on a 40 µm plane. Residual numbers are real. Inner and outer scans line up when a site is in spec.`;
 
     document.getElementById('die-note').innerHTML = dieNote(die, state, crude);
     document.getElementById('actions').innerHTML = actions(die, state);

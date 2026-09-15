@@ -6,6 +6,7 @@
  */
 
 import { SITES, mag, nm } from './data.js';
+import { setWaveformResidual, waveformBar } from './waveform.js';
 
 /* ------------------------------------------------------------- plane math */
 
@@ -233,7 +234,8 @@ function marks({ mode, residuals, selected, showResiduals, showCallout, specNm }
 /* ------------------------------------------------------------ full panel */
 
 /**
- * One layout panel: header pill, coordinate plane, geometry, marks.
+ * One layout panel: header pill, coordinate plane, geometry, marks, and the
+ * inner/outer waveform strip for the same residuals.
  *
  * @param {object} opts
  * @param {'golden'|'measured'} opts.mode
@@ -271,6 +273,7 @@ export function layoutPanel(opts) {
         ${marks({ mode, residuals: rs, selected, showResiduals: mode === 'measured', showCallout: mode === 'measured', specNm })}
       </g>
     </svg>
+    ${waveformBar({ residuals: rs, selected, specNm })}
   </figure>`;
 }
 
@@ -300,6 +303,7 @@ export function setMarkResidual(root, panelId, siteId, r, specNm = 3.0) {
   if (callout) callout.style.opacity = bad ? '1' : '0';
   const ghost = panel.querySelector(`[data-ghost="${siteId}"]`);
   if (ghost) ghost.style.opacity = bad ? '1' : '0';
+  setWaveformResidual(root, panelId, siteId, r, specNm);
 }
 
 /** Screen point -> plane coordinates in µm, for the cursor readout. */

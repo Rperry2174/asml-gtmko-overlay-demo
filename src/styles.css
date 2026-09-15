@@ -425,8 +425,155 @@ button.tool:hover {
 
 .lv {
   display: block;
+  /* Cap the plane at about half the window so the waveform strip and the
+     tiles under it stay on the same dashboard instead of below the fold. */
+  width: min(100%, calc(46vh * 460 / 418));
+  height: auto;
+  margin-inline: auto;
+}
+
+/* ------------------------------------------------------ waveform analysis */
+
+.wf {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.wf__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  min-height: 16px;
+}
+
+.wf__title {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.wf__sub {
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.wf__keys {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.wf-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.wf-key__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.wf-key__swatch--outer {
+  background: var(--gold);
+}
+
+.wf-key__swatch--inner {
+  background: var(--cyan);
+}
+
+.wf__sites {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.wf__site {
+  min-width: 0;
+  background: var(--bg-canvas);
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+  padding: 4px 4px 2px;
+}
+
+.wf__site.is-sel {
+  border-color: #235870;
+}
+
+.wf__site.is-bad {
+  border-color: #6e2b2b;
+  background: #140e12;
+}
+
+.wf__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 2px 2px;
+  font-size: 10px;
+}
+
+.wf__id {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.wf__r {
+  color: var(--text-dim);
+}
+
+.wf__tag {
+  margin-left: auto;
+  letter-spacing: 0.04em;
+  font-size: 9.5px;
+}
+
+.wf__tag--ok {
+  color: #7ff0ad;
+}
+
+.wf__tag--fail {
+  color: #ff9c9c;
+}
+
+.wf__svg {
+  display: block;
   width: 100%;
   height: auto;
+}
+
+.wf-outer {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.wf-inner {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.wf-inner.is-bad {
+  stroke: var(--red);
+}
+
+.wf-inner-g {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transition: transform 900ms cubic-bezier(0.32, 0.72, 0.24, 1);
 }
 
 /* layout viewer primitives */
